@@ -16,10 +16,28 @@ class Read():
         self.tags = [str(x) for x in tags]
 
 
+class Alignment():
+    """A sam-format sequence alignment"""
+    def __init__(self, head, reads):
+        self.head = head
+        self.reads = reads
+
 def parse_sam_read(string):
     """Takes a string in SAM -file format and returns a Read object."""
     fields = string.strip().split()
     return Read(fields[0], fields[1], fields[2], fields[3], fields[4],
                 fields[5], fields[6], fields[7], fields[8], fields[9],
                 fields[10], tags=fields[11:])
+
+def read_sam(samfile):
+    """Creates an Alignment object from a correctly formatted SAM file"""
+    with open(samfile) as f:
+        headlines = []
+        reads = []
+        for line in f:
+            if line.startswith("@"):
+                headlines.append(line)
+            else:
+                reads.append(parse_sam_read(line))
+    return Alignment(head = "".join(headlines), reads = reads)
 
