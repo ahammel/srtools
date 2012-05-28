@@ -33,8 +33,12 @@ def parse_sam_read(string):
 
 def read_sam(samfile):
     """Creates an Alignment object from a correctly formatted SAM file"""
+    headlines=[]
+    reads=[]
     with open(samfile) as f:
-        headlines = [x for x in iter(f.readline, '') if x.startswith('@')]
-        reads = [parse_sam_read(x) for x in iter(f.readline,'') \
-                 if not x.startswith ('@')]
+        for line in f:
+            if line.startswith("@"):
+                headlines.append(line)
+            elif line:
+                reads.append(parse_sam_read(line))
     return Alignment(head="".join(headlines), reads=reads)
