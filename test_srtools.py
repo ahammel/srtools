@@ -1,7 +1,7 @@
 import pytest
 import srtools
 
-testfile = "./marq_aln.test.sam"
+test_1read = "./test/test_1read.sam"
 
 sam_str = """
 SRR360147.1     77      *       0       0       *       *       0       0\
@@ -76,7 +76,7 @@ def test_parse_sam_read():
 
 
 def test_read_sam():
-    test_algn = srtools.read_sam(testfile)
+    test_algn = srtools.read_sam(test_1read)
     assert test_algn.head == algn.head
     for test_read in test_algn.reads:
         assert test_read.qname == read.qname
