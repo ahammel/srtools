@@ -1,3 +1,12 @@
+class UnmappedReadError(ValueError):
+    """The exception raised when attempting an illegal operation on an unmapped
+    read. A consensus sequence cannot be derived from an unmapped read, for
+    example.
+
+    """
+    pass
+
+
 class Read():
     """A sam-format sequence read."""
     def __init__(self, qname, flag, rname, pos, mapq, cigar, rnext, pnext,
@@ -42,3 +51,36 @@ def read_sam(samfile):
             elif line:
                 reads.append(parse_sam_read(line))
     return Alignment(head="".join(headlines), reads=reads)
+
+
+def majority(nucleotides, cutoff=0.5):
+    """Given a collection of strings, returns the majority rule consensus among
+    them. If there is no majority above the cutoff fraction, returns "N".
+
+    """
+    for i in nucleotides:
+        if len([x for x in nucleotides if x == i]) >= cutoff:
+            return i
+    return "N"
+
+
+def consensus(reads, cutoff=0.5):
+    """Returns the consensus sequence of a collection of reads"""
+    all_nucleotides = {}
+    for read in reads:
+        if read.pos == 0:
+            raise UnmappedReadError
+        else:
+            index = read.pos
+            for nuc in read.seq:
+                all_nucleotides.setdefault(index, [])
+                all_nucleotides[index].append(nuc)
+                index += 1
+    consensus_sequence = ""
+    for position in range(min(all_nucleotides), max(all_nucleotides)+1):
+        try:
+            consensus_sequence += \
+                majority(all_nucleotides[position], cutoff=cutoff)
+        except KeyError:
+            consensus_sequence += 'N'
+    return consensus_sequence
