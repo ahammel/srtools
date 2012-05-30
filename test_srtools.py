@@ -42,14 +42,15 @@ algn = srtools.Alignment(head=headstr, reads=[single_read])
 
 indel_algn = srtools.read_sam("./test/test_indel.sam")
 
+
 class TestRead:
     def test_parse_cigar(self):
-        """Note: there should never be a need to use Read.parse_cigar like 
+        """Note: there should never be a need to use Read.parse_cigar like
         this.
 
         """
         assert srtools.Read.parse_cigar('*') == []
-        assert srtools.Read.parse_cigar('40M') == [(40,'M')]
+        assert srtools.Read.parse_cigar('40M') == [(40, 'M')]
         assert srtools.Read.parse_cigar('18M2D20M') == \
                     [(18, 'M'), (2, 'D'), (20, 'M')]
 
@@ -73,7 +74,7 @@ class TestRead:
     def test_eq(self):
         read1, read2, read3 = indel_algn.reads
         assert read1 != read2
-        assert read1 == read3
+        assert read1 != read3
         assert read2 != read3
 
 
@@ -91,6 +92,7 @@ def test_parse_sam_read():
     assert single_read.seq == test_read.seq
     assert single_read.qual == test_read.qual
     assert single_read.tags == test_read.tags
+    assert single_read == test_read
 
 
 def test_read_sam():
@@ -115,6 +117,19 @@ def test_dot_deletions():
     assert srtools.dot_deletions(indel_algn.reads[0]) == \
         "AGATGACG..GAAGCTTGATCTCACGAANNNNNNNNTTNNCATCCNNNTNNT"
     assert srtools.dot_deletions(single_read) == single_read.seq
+
+
+def test_dot_indels():
+    assert srtools.dot_indels(indel_algn) == \
+        [("AGATGACG..GAAGCTTGATCTCACGAA..NNNNNNNNTTNNCATCCNNNTNNT",
+          [(8, 'M'), (2, 'D'), (65,'M')],
+          1),
+         ("AGATGACGAAGAAGCTTGATCTCACGAA..NNNNNNNNTTNNCATCCNNNTNNA",
+          [(77, 'M')],
+          1),
+         ("AGATGACG..GAAGCTTGATCTCACGAATTNNNNNNNNTTNNCATCCNNNTNNT",
+          [(8, 'M'), (2, 'D'), (18, 'M'), (2, 'I'), (24, 'M')],
+          1)]	
 
 
 def test_consensus():

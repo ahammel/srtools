@@ -1,5 +1,6 @@
 import re
 
+
 class UnmappedReadError(ValueError):
     """The exception raised when attempting an illegal operation on an unmapped
     read. A consensus sequence cannot be derived from an unmapped read, for
@@ -11,8 +12,9 @@ class UnmappedReadError(ValueError):
 
 class Read():
     """A sam-format sequence read."""
+
     def parse_cigar(cigar):
-        """Takes a cigar string, and returns a list of 2-tuples consisting 
+        """Takes a cigar string, and returns a list of 2-tuples consisting
         of the index (int) and the operation (one-character str).
 
         """
@@ -25,7 +27,7 @@ class Read():
         self.rname = str(rname)
         self.pos = int(pos)
         self.mapq = int(mapq)
-        self.cigar = Read.parse_cigar(str(cigar))
+        self.cigar = Read.parse_cigar(cigar)
         self.rnext = str(rnext)
         self.pnext = int(pnext)
         self.tlen = int(tlen)
@@ -34,23 +36,24 @@ class Read():
         self.tags = [str(x) for x in tags]
 
     def __eq__(self, other):
-        tests = [ self.qname == other.qname,
-                  self.flag == other.flag,
-                  self.rname == other.rname,
-                  self.pos == other.pos,
-                  self.mapq == other.mapq,
-                  self.cigar == other.cigar,
-                  self.rnext == other.rnext,
-                  self.pnext == other.pnext,
-                  self.tlen == other.tlen,
-                  self.seq == other.seq,
-                  self.qual == other.qual,
-                  self.tags == other.tags]
+        tests = [self.qname == other.qname,
+                 self.flag == other.flag,
+                 self.rname == other.rname,
+                 self.pos == other.pos,
+                 self.mapq == other.mapq,
+                 self.cigar == other.cigar,
+                 self.rnext == other.rnext,
+                 self.pnext == other.pnext,
+                 self.tlen == other.tlen,
+                 self.seq == other.seq,
+                 self.qual == other.qual,
+                 self.tags == other.tags]
 
         return all(result == True for result in tests)
 
-    def __ne__(self,other):
+    def __ne__(self, other):
         return not self == other
+
 
 class Alignment():
     """A sam-format sequence alignment"""
@@ -69,8 +72,8 @@ def parse_sam_read(string):
 
 def read_sam(samfile):
     """Creates an Alignment object from a correctly formatted SAM file"""
-    headlines=[]
-    reads=[]
+    headlines = []
+    reads = []
     with open(samfile) as f:
         for line in f:
             if line.startswith("@"):
@@ -80,29 +83,36 @@ def read_sam(samfile):
     return Alignment(head="".join(headlines), reads=reads)
 
 
-def majority(nucleotides, cutoff=0.5):
-    """Given a collection of strings, returns the majority rule consensus among
-    them. If there is no majority above the cutoff fraction, returns "N".
-
-    """
-    for i in nucleotides:
-        if len([x for x in nucleotides if x == i]) >= cutoff:
-            return i
-    return "N"
-
-
 def dot_deletions(read):
-    """Scans the read's CIGAR string and returns the sequence string with 
+    """Scans the read's CIGAR string and returns the sequence string with
     periods added where there is a deletion relative to the reference.
 
     """
     dotted_seq = read.seq
     i = 0
     for index, operator in read.cigar:
-        if operator=='D':
+        if operator == 'D':
             dotted_seq = dotted_seq[:i] + ('.' * index) + dotted_seq[i:]
         i += index
     return dotted_seq
+
+
+def dot_indels(reads):
+    """Given an iterable of reads, adds dots to the sequences where there are
+    indels. Returns a list of 3-tuples of the dotted sequence, the cigar and the
+    position.
+
+    """
+
+def majority(nucleotides, cutoff=0.5):
+    """Given a collection of strings, returns the majority rule consensus among
+    them. If there is no majority above the cutoff fraction, returns "N".
+
+    """
+    for i in nucleotides:
+        if len([x for x in nucleotides if x == i]) / len(nucleotides) >= cutoff:
+            return i
+    return "N"
 
 
 def consensus(reads, cutoff=0.5):
@@ -118,10 +128,10 @@ def consensus(reads, cutoff=0.5):
                 all_nucleotides[index].append(nuc)
                 index += 1
     consensus_sequence = ""
-    for position in range(min(all_nucleotides), max(all_nucleotides)+1):
+    for position in range(min(all_nucleotides), max(all_nucleotides) + 1):
         try:
             consensus_sequence += \
                 majority(all_nucleotides[position], cutoff=cutoff)
         except KeyError:
             consensus_sequence += 'N'
-    return consensus_sequence.replace('.','')
+    return consensus_sequence.replace('.', '')
