@@ -1,3 +1,5 @@
+import re
+
 class UnmappedReadError(ValueError):
     """The exception raised when attempting an illegal operation on an unmapped
     read. A consensus sequence cannot be derived from an unmapped read, for
@@ -9,6 +11,13 @@ class UnmappedReadError(ValueError):
 
 class Read():
     """A sam-format sequence read."""
+    def parse_cigar(cigar):
+        """Takes a cigar string, and returns a list of 2-tuples consisting 
+        of the index (int) and the operation (one-character str).
+
+        """
+        return [(int(a), b) for (a, b) in re.findall(r'(\d+)(\D)', cigar)]
+
     def __init__(self, qname, flag, rname, pos, mapq, cigar, rnext, pnext,
                  tlen, seq, qual, tags=[]):
         self.qname = str(qname)
@@ -16,7 +25,7 @@ class Read():
         self.rname = str(rname)
         self.pos = int(pos)
         self.mapq = int(mapq)
-        self.cigar = str(cigar)
+        self.cigar = parse_cigar(str(cigar))
         self.rnext = str(rnext)
         self.pnext = int(pnext)
         self.tlen = int(tlen)
@@ -24,6 +33,24 @@ class Read():
         self.qual = str(qual)
         self.tags = [str(x) for x in tags]
 
+    def __eq__(self, other):
+        tests = [ self.qname == other.qname,
+                  self.flag == other.flag,
+                  self.rname == other.rname,
+                  self.pos == other.pos,
+                  self.mapq == other.mapq,
+                  self.cigar == other.cigar,
+                  self.rnext == other.rnext,
+                  self.pnext == other.pnext,
+                  self.tlen == other.tlen,
+                  self.seq == other.seq,
+                  self.qual == other.qual,
+                  self.tags == other.tags]
+
+        return all(result == True for result in tests)
+
+    def __ne__(self,other):
+        return not self == other
 
 class Alignment():
     """A sam-format sequence alignment"""
@@ -64,6 +91,28 @@ def majority(nucleotides, cutoff=0.5):
     return "N"
 
 
+def parse_cigar(cigar):
+    """Takes a cigar string, and returns a list of 2-tuples consisting of
+    the index (int) and the operation (one-character str).
+
+    """
+    return [(int(a), b) for (a, b) in re.findall(r'(\d+)(\D)', cigar)]
+
+
+def dot_deletions(read):
+    """Scans the read's CIGAR string and returns the sequence string with 
+    periods added where there is a deletion relative to the reference.
+
+    """
+    dotted_seq = read.seq
+    i = 0
+    for index, operator in read.cigar:
+        if operator=='D':
+            dotted_seq = dotted_seq[:i] + ('.' * index) + dotted_seq[i:]
+        i += index
+    return dotted_seq
+
+
 def consensus(reads, cutoff=0.5):
     """Returns the consensus sequence of a collection of reads"""
     all_nucleotides = {}
@@ -72,7 +121,7 @@ def consensus(reads, cutoff=0.5):
             raise UnmappedReadError
         else:
             index = read.pos
-            for nuc in read.seq:
+            for nuc in dot_deletions(read):
                 all_nucleotides.setdefault(index, [])
                 all_nucleotides[index].append(nuc)
                 index += 1
@@ -83,4 +132,4 @@ def consensus(reads, cutoff=0.5):
                 majority(all_nucleotides[position], cutoff=cutoff)
         except KeyError:
             consensus_sequence += 'N'
-    return consensus_sequence
+    return consensus_sequence.replace('.','')
