@@ -25,7 +25,7 @@ class Read():
         self.rname = str(rname)
         self.pos = int(pos)
         self.mapq = int(mapq)
-        self.cigar = parse_cigar(str(cigar))
+        self.cigar = Read.parse_cigar(str(cigar))
         self.rnext = str(rnext)
         self.pnext = int(pnext)
         self.tlen = int(tlen)
@@ -89,14 +89,6 @@ def majority(nucleotides, cutoff=0.5):
         if len([x for x in nucleotides if x == i]) >= cutoff:
             return i
     return "N"
-
-
-def parse_cigar(cigar):
-    """Takes a cigar string, and returns a list of 2-tuples consisting of
-    the index (int) and the operation (one-character str).
-
-    """
-    return [(int(a), b) for (a, b) in re.findall(r'(\d+)(\D)', cigar)]
 
 
 def dot_deletions(read):
