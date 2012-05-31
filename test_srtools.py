@@ -83,7 +83,6 @@ class TestRead:
         assert str(single_read) == sam_str
 
 
-
 class TestAlignment:
     def test_str(self):
         for test_file in glob.glob("test/*"):
@@ -96,7 +95,7 @@ class TestAlignment:
 
 def test_parse_sam_read():
     test_read = srtools.parse_sam_read(sam_str)
-    assert test_read== single_read
+    assert test_read == single_read
 
 
 def test_read_sam():
@@ -117,18 +116,13 @@ def test_read_sam():
         assert single_read.tags == test_read.tags
 
 
-def test_dot_deletions():
-    assert srtools.dot_deletions(indel_algn.reads[0]) == \
-        "AGATGACG..GAAGCTTGATCTCACGAANNNNNNNNTTNNCATCCNNNTNNT"
-    assert srtools.dot_deletions(single_read) == single_read.seq
-
-
 def test_convert_indecies():
     cigar = [(1, "M"), (2, "M"), (3, "M")]
     c_cigar = srtools.convert_indecies(cigar)
     assert c_cigar[0] == (0, 1, "M")
     assert c_cigar[1] == (1, 2, "M")
     assert c_cigar[2] == (3, 3, "M")
+
 
 def test_make_dot_queue():
     trivial_read = ("AAAA", [(4, "M")], 1)
@@ -145,14 +139,14 @@ def test_make_dot_queue():
 def test_dot_indels():
     assert list(srtools.dot_indels(indel_algn.reads)) == \
         [("AGATGACG..GAAGCTTGATCTCACGAA..NNNNNNNNTTNNCATCCNNNTNNT",
-          [(8, 'M'), (2, 'D'), (65,'M')],
+          [(8, 'M'), (2, 'D'), (65, 'M')],
           1),
          ("AGATGACGAAGAAGCTTGATCTCACGAA..NNNNNNNNTTNNCATCCNNNTNNA",
           [(77, 'M')],
           1),
          ("AGATGACG..GAAGCTTGATCTCACGAATTNNNNNNNNTTNNCATCCNNNTNNT",
           [(8, 'M'), (2, 'D'), (18, 'M'), (2, 'I'), (24, 'M')],
-          1)]	
+          1)]
 
 
 def test_consensus():

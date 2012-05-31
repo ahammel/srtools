@@ -20,7 +20,6 @@ class Read():
         """
         return [(int(a), b) for (a, b) in re.findall(r'(\d+)(\D)', cigar)]
 
-
     def print_cigar(cigar):
         """Prints a cigar in the standard SAM format"""
         if not cigar:
@@ -76,11 +75,12 @@ class Alignment():
     def __init__(self, head, reads):
         self.head = head
         self.reads = reads
-    
+
     def __str__(self):
         headstr = self.head
         readstr = "\n".join([str(read) for read in self.reads])
         return headstr + readstr
+
 
 def parse_sam_read(string):
     """Takes a string in SAMfile format and returns a Read object."""
@@ -103,27 +103,13 @@ def read_sam(samfile):
     return Alignment(head="".join(headlines), reads=reads)
 
 
-def dot_deletions(read):
-    """Scans the read's CIGAR string and returns the sequence string with
-    periods added where there is a deletion relative to the reference.
-
-    """
-    dotted_seq = read.seq
-    i = 0
-    for index, operator in read.cigar:
-        if operator in 'ND':
-            dotted_seq = dotted_seq[:i] + ('.' * index) + dotted_seq[i:]
-        i += index
-    return dotted_seq
-
-
 def convert_indecies(cigar):
     """Converts a cigar from (n, operator) format to (index, n, operator).
     The index is the zero-based position of the operator, and n is its length.
 
     """
     index = 0
-    c_cigar = [] # c for converted
+    c_cigar = []  # c for converted
     for i, o in cigar:
         c_cigar.append((index, i, o))
         index += i
@@ -145,7 +131,7 @@ def make_dot_queue(stripped_read, stripped_read_list):
         if seq == s_seq and pos == s_pos:
             queue.extend([(i, n) for i, n, o in c_cigar if o in "ND"])
         else:
-            queue.extend([(i+offset, n) for i, n, o in c_cigar if o == "I"])
+            queue.extend([(i + offset, n) for i, n, o in c_cigar if o == "I"])
     return queue
 
 
@@ -163,8 +149,8 @@ def dot_from_queue(stripped_read, queue):
 
 def dot_indels(reads):
     """Given an iterable of reads, adds dots to the sequences where there are
-    indels. Returns a list of 3-tuples of the dotted sequence, the cigar and the
-    position.
+    indels. Returns a list of 3-tuples of the dotted sequence, the cigar and
+    the position.
 
     """
     stripped_reads = [(read.seq, read.cigar, read.pos) for read in reads]
