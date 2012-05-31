@@ -91,10 +91,54 @@ def dot_deletions(read):
     dotted_seq = read.seq
     i = 0
     for index, operator in read.cigar:
-        if operator == 'D':
+        if operator in 'ND':
             dotted_seq = dotted_seq[:i] + ('.' * index) + dotted_seq[i:]
         i += index
     return dotted_seq
+
+
+def convert_indecies(cigar):
+    """Converts a cigar from (n, operator) format to (index, n, operator).
+    The index is the zero-based position of the operator, and n is its length.
+
+    """
+    index = 0
+    c_cigar = [] # c for converted
+    for i, o in cigar:
+        c_cigar.append((index, i, o))
+        index += i
+    return c_cigar
+
+
+def make_dot_queue(stripped_read, stripped_read_list):
+    """Returns a queue of positions at which the stripped_read should be dotted
+    to indicate an indel. A stripped_read is a 3-tuple of the sequence, the
+    cigar and the position. Helper function for dot_indels.
+
+    """
+    queue = []
+    s_seq, s_cigar, s_pos = stripped_read
+    for read in stripped_read_list:
+        seq, cigar, pos = read
+        c_cigar = convert_indecies(cigar)
+        offset = pos - s_pos
+        if seq == s_seq and pos == s_pos:
+            queue.extend([(i, n) for i, n, o in c_cigar if o in "ND"])
+        else:
+            queue.extend([(i+offset, n) for i, n, o in c_cigar if o == "I"])
+    return queue
+
+
+def dot_from_queue(stripped_read, queue):
+    """Returns a short-read sequence with dots indicating the positions of
+    indels. A stripped_read is a 3-tuple of the sequence, the cigar and the
+    position.Helper function for dot_indels.
+
+    """
+    seq, cigar, pos = stripped_read
+    for i, n in queue:
+        seq = seq[:i] + ('.' * n) + seq[i:]
+    return seq
 
 
 def dot_indels(reads):
@@ -103,6 +147,17 @@ def dot_indels(reads):
     position.
 
     """
+    stripped_reads = [(read.seq, read.cigar, read.pos) for read in reads]
+    dotted_reads = []
+    for sr in stripped_reads:
+        queue = make_dot_queue(sr, stripped_reads)
+        normalized_read = dot_from_queue(sr, queue)
+        dotted_reads.append(normalized_read)
+
+    cigars = [c for s, c, p in stripped_reads]
+    positions = [p for s, c, p in stripped_reads]
+    return zip(dotted_reads, cigars, positions)
+
 
 def majority(nucleotides, cutoff=0.5):
     """Given a collection of strings, returns the majority rule consensus among
@@ -110,7 +165,7 @@ def majority(nucleotides, cutoff=0.5):
 
     """
     for i in nucleotides:
-        if len([x for x in nucleotides if x == i]) / len(nucleotides) >= cutoff:
+        if len([x for x in nucleotides if x == i]) / len(nucleotides) > cutoff:
             return i
     return "N"
 
@@ -118,12 +173,13 @@ def majority(nucleotides, cutoff=0.5):
 def consensus(reads, cutoff=0.5):
     """Returns the consensus sequence of a collection of reads"""
     all_nucleotides = {}
-    for read in reads:
-        if read.pos == 0:
+    for read in dot_indels(reads):
+        seq, cigar, pos = read
+        if pos == 0:
             raise UnmappedReadError
         else:
-            index = read.pos
-            for nuc in dot_deletions(read):
+            index = pos
+            for nuc in seq:
                 all_nucleotides.setdefault(index, [])
                 all_nucleotides[index].append(nuc)
                 index += 1

@@ -119,8 +119,27 @@ def test_dot_deletions():
     assert srtools.dot_deletions(single_read) == single_read.seq
 
 
+def test_convert_indecies():
+    cigar = [(1, "M"), (2, "M"), (3, "M")]
+    c_cigar = srtools.convert_indecies(cigar)
+    assert c_cigar[0] == (0, 1, "M")
+    assert c_cigar[1] == (1, 2, "M")
+    assert c_cigar[2] == (3, 3, "M")
+
+def test_make_dot_queue():
+    trivial_read = ("AAAA", [(4, "M")], 1)
+    trivial_list = [("AAAA", [(4, "M")], 1)]
+    assert srtools.make_dot_queue(trivial_read, trivial_list) == []
+    hard_read = ("AAAA", [(3, "M"), (2, "D"), (1, "M")], 1)
+    hard_list = [("AAAA", [(3, "M"), (2, "D"), (1, "M")], 1),
+                 ("AAATTA", [(6, "M")], 1),
+                 ("CAATTA", [(1, "I"), (4, "M")], 2)]
+    assert srtools.make_dot_queue(hard_read, hard_list) == \
+            [(3, 2), (1, 1)]
+
+
 def test_dot_indels():
-    assert srtools.dot_indels(indel_algn) == \
+    assert list(srtools.dot_indels(indel_algn.reads)) == \
         [("AGATGACG..GAAGCTTGATCTCACGAA..NNNNNNNNTTNNCATCCNNNTNNT",
           [(8, 'M'), (2, 'D'), (65,'M')],
           1),
