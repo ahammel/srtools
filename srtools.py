@@ -13,12 +13,22 @@ class UnmappedReadError(ValueError):
 class Read():
     """A sam-format sequence read."""
 
-    def parse_cigar(cigar):
+    def read_cigar(cigar):
         """Takes a cigar string, and returns a list of 2-tuples consisting
         of the index (int) and the operation (one-character str).
 
         """
         return [(int(a), b) for (a, b) in re.findall(r'(\d+)(\D)', cigar)]
+
+
+    def print_cigar(cigar):
+        """Prints a cigar in the standard SAM format"""
+        if not cigar:
+            cigar_str = '*'
+        else:
+            cigar_str =\
+                ''.join([str(char) for substr in cigar for char in substr])
+        return cigar_str
 
     def __init__(self, qname, flag, rname, pos, mapq, cigar, rnext, pnext,
                  tlen, seq, qual, tags=[]):
@@ -27,7 +37,7 @@ class Read():
         self.rname = str(rname)
         self.pos = int(pos)
         self.mapq = int(mapq)
-        self.cigar = Read.parse_cigar(cigar)
+        self.cigar = Read.read_cigar(cigar)
         self.rnext = str(rnext)
         self.pnext = int(pnext)
         self.tlen = int(tlen)
@@ -54,13 +64,23 @@ class Read():
     def __ne__(self, other):
         return not self == other
 
+    def __str__(self):
+        attrs = [self.qname, self.flag, self.rname, self.pos, self.mapq,
+                 Read.print_cigar(self.cigar), self.rnext, self.pnext,
+                 self.tlen, self.seq, self.qual] + self.tags
+        return "\t".join([str(x) for x in attrs])
+
 
 class Alignment():
     """A sam-format sequence alignment"""
     def __init__(self, head, reads):
         self.head = head
         self.reads = reads
-
+    
+    def __str__(self):
+        headstr = self.head
+        readstr = "\n".join([str(read) for read in self.reads])
+        return headstr + readstr
 
 def parse_sam_read(string):
     """Takes a string in SAMfile format and returns a Read object."""

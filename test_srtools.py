@@ -1,13 +1,15 @@
 import pytest
 import srtools
+import os
+import glob
 
 test_1read = "./test/test_1read.sam"
 
-sam_str = """
-SRR360147.1     77      *       0       0       *       *       0       0\
- AGATGACGAAGAAGCTTGATCTCACGAANNNNNNNNTTNNCATCCNNNTNNTNNNNNNNNNNNNNNNNNNNNNNN\
- HHHHHHHHHHHHHHHHHHHHHHHHH==@###############################################\
- YT:Z:UP YF:Z:NS"""
+sam_str = """\
+SRR360147.1\t77\t*\t0\t0\t*\t*\t0\t0\
+\tAGATGACGAAGAAGCTTGATCTCACGAANNNNNNNNTTNNCATCCNNNTNNTNNNNNNNNNNNNNNNNNNNNNNN\
+\tHHHHHHHHHHHHHHHHHHHHHHHHH==@###############################################\
+\tYT:Z:UP\tYF:Z:NS"""
 
 single_read = srtools.Read(
                 qname="SRR360147.1",
@@ -20,9 +22,9 @@ single_read = srtools.Read(
                 pnext=0,
                 tlen=0,
                 seq=("AGATGACGAAGAAGCTTGATCTCACGAANNNNNNNNTTNNCATCCNNNT"
-                    "NNTNNNNNNNNNNNNNNNNNNNNNNN"),
+                     "NNTNNNNNNNNNNNNNNNNNNNNNNN"),
                 qual=("HHHHHHHHHHHHHHHHHHHHHHHHH==@####################"
-                    "###########################"),
+                      "###########################"),
                 tags=["YT:Z:UP", "YF:Z:NS"]
         )
 
@@ -44,14 +46,14 @@ indel_algn = srtools.read_sam("./test/test_indel.sam")
 
 
 class TestRead:
-    def test_parse_cigar(self):
-        """Note: there should never be a need to use Read.parse_cigar like
+    def test_read_cigar(self):
+        """Note: there should never be a need to use Read.read_cigar like
         this.
 
         """
-        assert srtools.Read.parse_cigar('*') == []
-        assert srtools.Read.parse_cigar('40M') == [(40, 'M')]
-        assert srtools.Read.parse_cigar('18M2D20M') == \
+        assert srtools.Read.read_cigar('*') == []
+        assert srtools.Read.read_cigar('40M') == [(40, 'M')]
+        assert srtools.Read.read_cigar('18M2D20M') == \
                     [(18, 'M'), (2, 'D'), (20, 'M')]
 
     def test_init(self):
@@ -77,22 +79,24 @@ class TestRead:
         assert read1 != read3
         assert read2 != read3
 
+    def test_str(self):
+        assert str(single_read) == sam_str
+
+
+
+class TestAlignment:
+    def test_str(self):
+        for test_file in glob.glob("test/*"):
+            test_algn = srtools.read_sam(test_file)
+            with open("tmp.sam", "w") as f:
+                print(test_algn, file=f)
+            assert str(test_algn) == str(srtools.read_sam("tmp.sam"))
+        os.remove("tmp.sam")
+
 
 def test_parse_sam_read():
     test_read = srtools.parse_sam_read(sam_str)
-    assert test_read.qname == single_read.qname
-    assert single_read.flag == test_read.flag
-    assert single_read.rname == test_read.rname
-    assert single_read.pos == test_read.pos
-    assert single_read.mapq == test_read.mapq
-    assert single_read.cigar == test_read.cigar
-    assert single_read.rnext == test_read.rnext
-    assert single_read.pnext == test_read.pnext
-    assert single_read.tlen == test_read.tlen
-    assert single_read.seq == test_read.seq
-    assert single_read.qual == test_read.qual
-    assert single_read.tags == test_read.tags
-    assert single_read == test_read
+    assert test_read== single_read
 
 
 def test_read_sam():
