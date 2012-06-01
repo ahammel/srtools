@@ -82,6 +82,15 @@ class TestRead:
     def test_str(self):
         assert str(single_read) == sam_str
 
+    def test_reverse(self):
+        test_rc = srtools.read_sam("test/test_rc.sam")
+        seq, rc = test_rc.reads
+        print("Seq: ", seq)
+        print("RRC: ", rc.reverse())
+        print("RC: ", rc)
+        print("RSeq: ", seq.reverse())
+        assert seq.reverse() == rc
+        assert rc.reverse() == seq
 
 class TestAlignment:
     def test_str(self):
@@ -92,6 +101,12 @@ class TestAlignment:
             assert str(test_algn) == str(srtools.read_sam("tmp.sam"))
         os.remove("tmp.sam")
 
+
+def test_reverse_complement():
+    assert srtools.reverse_complement("") == ""
+    assert srtools.reverse_complement("N") == "N"
+    assert srtools.reverse_complement("ACGT") == "ACGT"
+    assert srtools.reverse_complement("GCCAT") == "ATGGC"
 
 def test_parse_sam_read():
     test_read = srtools.parse_sam_read(sam_str)
@@ -144,7 +159,7 @@ def test_consensus():
     assert srtools.consensus(indel_algn.reads) ==\
          "AGATGACGGAAGCTTGATCTCACGAANNNNNNNNTTNNCATCCNNNTNNT"
 
-    assert srtools.consensus(rc_align.reads) == "AAAGGGTTTT"
+    assert srtools.consensus(rc_align.reads) == "AAACCCTTTT"
 
 
 def test_overlaps():

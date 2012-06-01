@@ -1,6 +1,9 @@
 import re
 
 
+COMPLEMENT = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A', 'N': 'N'}
+
+
 class UnmappedReadError(ValueError):
     """The exception raised when attempting an illegal operation on an unmapped
     read. A consensus sequence cannot be derived from an unmapped read, for
@@ -70,6 +73,29 @@ class Read():
                  self.tlen, self.seq, self.qual] + self.tags
         return "\t".join([str(x) for x in attrs])
 
+    def reverse(self):
+        """Returns a reversed read. The sequence is reverse complemented, and
+        other flags are changed appropriately.
+
+        """
+        if self.tlen > 0:
+            new_pos = self.pos + self.tlen - 1
+        else:
+            new_pos = self.pos + self.tlen + 1
+        r_read = Read(qname = self.qname,
+                      flag = self.flag,
+                      rname = self.rname,
+                      pos = new_pos,
+                      mapq = self.mapq,
+                      cigar = Read.print_cigar(reversed(self.cigar)),
+                      rnext = self.rnext,
+                      pnext = self.pnext,
+                      tlen = -self.tlen,
+                      seq = reverse_complement(self.seq),
+                      qual = self.qual[::-1],
+                      tags = self.tags)
+        return r_read
+
 
 class Alignment():
     """A sam-format sequence alignment"""
@@ -81,6 +107,14 @@ class Alignment():
         headstr = self.head
         readstr = "\n".join([str(read) for read in self.reads])
         return headstr + readstr
+
+
+def reverse_complement(sequence):
+    rc = ""
+    seq = list(sequence)
+    while seq:
+        rc += COMPLEMENT[seq.pop()]       
+    return rc
 
 
 def parse_sam_read(string):
@@ -175,12 +209,26 @@ def majority(nucleotides, cutoff=0.5):
         if len([x for x in nucleotides if x == i]) / len(nucleotides) > cutoff:
             return i
     return "N"
+    
+def normalize(reads):
+    """Returns a list of reads identical to the input, but with all of them
+    facing the same direction (i.e., reads with negative tlen are reversed).
+    Helper function for consensus.
+
+    """
+    n_reads = []
+    for r in reads:
+        if r.tlen < 0:
+            n_reads.append(r.reverse())
+        else:
+            n_reads.append(r)
+    return n_reads
 
 
 def consensus(reads, cutoff=0.5):
     """Returns the consensus sequence of a collection of reads."""
     all_nucleotides = {}
-    for read in dot_indels(reads):
+    for read in dot_indels(normalize(reads)):
         seq, cigar, pos = read
         if pos == 0:
             raise UnmappedReadError
@@ -190,6 +238,7 @@ def consensus(reads, cutoff=0.5):
                 all_nucleotides.setdefault(index, [])
                 all_nucleotides[index].append(nuc)
                 index += 1
+
     consensus_sequence = ""
     for position in range(min(all_nucleotides), max(all_nucleotides) + 1):
         try:
