@@ -27,6 +27,7 @@ class Read():
         else:
             cigar_str =\
                 ''.join([str(char) for substr in cigar for char in substr])
+                # Strings and flattens the list of tuples
         return cigar_str
 
     def __init__(self, qname, flag, rname, pos, mapq, cigar, rnext, pnext,
@@ -177,7 +178,7 @@ def majority(nucleotides, cutoff=0.5):
 
 
 def consensus(reads, cutoff=0.5):
-    """Returns the consensus sequence of a collection of reads"""
+    """Returns the consensus sequence of a collection of reads."""
     all_nucleotides = {}
     for read in dot_indels(reads):
         seq, cigar, pos = read
@@ -197,3 +198,13 @@ def consensus(reads, cutoff=0.5):
         except KeyError:
             consensus_sequence += 'N'
     return consensus_sequence.replace('.', '')
+
+
+def overlaps(read1, read2):
+    """Returns True if the two reads cover at least one base in common and
+    False otherwise.
+
+    """
+    r1 = (read1.pos, read1.pos + read1.tlen)
+    r2 = (read2.pos, read2.pos + read2.tlen)
+    return max(r1) > min(r2)

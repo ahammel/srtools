@@ -43,7 +43,7 @@ headstr = """\
 algn = srtools.Alignment(head=headstr, reads=[single_read])
 
 indel_algn = srtools.read_sam("./test/test_indel.sam")
-
+rc_align = srtools.read_sam("test/test_rc_consensus.sam")
 
 class TestRead:
     def test_read_cigar(self):
@@ -102,18 +102,7 @@ def test_read_sam():
     test_algn = srtools.read_sam(test_1read)
     assert test_algn.head == algn.head
     for test_read in test_algn.reads:
-        assert single_read.qname == test_read.qname
-        assert single_read.flag == test_read.flag
-        assert single_read.rname == test_read.rname
-        assert single_read.pos == test_read.pos
-        assert single_read.mapq == test_read.mapq
-        assert single_read.cigar == test_read.cigar
-        assert single_read.rnext == test_read.rnext
-        assert single_read.pnext == test_read.pnext
-        assert single_read.tlen == test_read.tlen
-        assert single_read.seq == test_read.seq
-        assert single_read.qual == test_read.qual
-        assert single_read.tags == test_read.tags
+        assert single_read == test_read
 
 
 def test_convert_indecies():
@@ -154,3 +143,15 @@ def test_consensus():
         srtools.consensus([single_read])
     assert srtools.consensus(indel_algn.reads) ==\
          "AGATGACGGAAGCTTGATCTCACGAANNNNNNNNTTNNCATCCNNNTNNT"
+
+    assert srtools.consensus(rc_align.reads) == "AAAGGGTTTT"
+
+
+def test_overlaps():
+    read1, read2, read3, read4 = srtools.read_sam("test/test_overlap.sam").reads
+    assert not srtools.overlaps(read1, read2)
+    assert srtools.overlaps(read1, read3)
+    assert not srtools.overlaps(read1, read4)
+    assert srtools.overlaps(read2, read3)
+    assert srtools.overlaps(read2, read4)
+    assert srtools.overlaps(read3, read4)
