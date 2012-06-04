@@ -92,6 +92,13 @@ class TestRead:
         assert seq.reverse() == rc
         assert rc.reverse() == seq
 
+    def test_get_covered_range(self):
+        test_reads = srtools.read_sam("test/test_expressed_locus.sam").reads 
+        assert test_reads[0].get_covered_range() == (1, 5)
+        assert test_reads[1].get_covered_range() == (3, 7)
+        assert test_reads[2].get_covered_range() == (13, 17)
+        assert test_reads[3].get_covered_range() == (14, 18)
+
 class TestAlignment:
     def test_str(self):
         for test_file in glob.glob("test/*.sam"):
@@ -202,3 +209,34 @@ def test_overlaps():
     assert srtools.overlaps(read2, read3)
     assert srtools.overlaps(read2, read4)
     assert srtools.overlaps(read3, read4)
+
+
+    read1, read2, read3, read4 =\
+        srtools.read_sam("test/test_expressed_locus.sam").reads
+    assert srtools.overlaps(read1, read2)
+    assert not srtools.overlaps(read1, read3)
+    assert not srtools.overlaps(read1, read4)
+    assert not srtools.overlaps(read2, read3)
+    assert not srtools.overlaps(read2, read4)
+    assert srtools.overlaps(read3, read4)
+
+
+def test_expressed_loci():
+    alignment = srtools.read_sam("test/test_expressed_locus.sam")
+    locus_gen = srtools.expressed_loci(alignment.reads)
+    group1 = next(locus_gen)
+    group2 = next(locus_gen)
+    assert group1[0].qname == "SRR360147.1"
+    assert group1[1].qname == "SRR360147.3"
+    assert group2[0].qname == "SRR360147.2"
+    assert group2[1].qname == "SRR360147.4"
+
+
+def test_coverage():
+    test_reads = srtools.read_sam("test/test_expressed_locus.sam").reads
+    assert srtools.coverage(test_reads[:1]) == (1,5)
+    assert srtools.coverage(test_reads[:2]) == (1,7)
+    assert srtools.coverage(test_reads[:3]) == (1,17)
+    assert srtools.coverage(test_reads[:4]) == (1,18)
+    assert srtools.coverage(test_reads[2:]) == (13,18)
+    assert srtools.coverage(test_reads[1:]) == (3,18)

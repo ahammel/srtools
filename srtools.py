@@ -96,6 +96,19 @@ class Read():
                       tags = self.tags)
         return r_read
 
+    def get_covered_range(self):
+        """Returns a tuple consisiting of the first and last position covered
+        by the read.
+
+        """
+        if self.tlen < 0:
+            last_base = self.pos
+            first_base = self.pos + self.tlen + 1
+        else:
+            first_base = self.pos
+            last_base = self.pos + self.tlen - 1
+        return (first_base, last_base)
+
 
 class Alignment():
     """A sam-format sequence alignment"""
@@ -272,8 +285,12 @@ def majority(nucleotides, cutoff=0.5):
     """
     for i in nucleotides:
         if len([x for x in nucleotides if x == i]) / len(nucleotides) > cutoff:
-            return i
-    return "N"
+            consensus = i
+            break
+    else:
+        consensus = "N"
+    return consensus
+
     
 def normalize(reads):
     """Returns a list of reads identical to the input, but with all of them
@@ -322,3 +339,34 @@ def overlaps(read1, read2):
     r1 = (read1.pos, read1.pos + read1.tlen)
     r2 = (read2.pos, read2.pos + read2.tlen)
     return max(r1) > min(r2)
+
+
+def expressed_loci(reads):
+    """Returns a generator object which yields lists of overlapping reads"""
+    locus = []
+    for read in reads:
+        if not locus or overlaps(locus[-1], read):
+            locus.append(read)
+        else:
+            yield locus
+            locus = [read]
+    yield locus
+
+
+def coverage(reads):
+    """Returns a tuple consisting of the positions of the first and last base
+    covered by the list of reads.
+
+    """
+    if not reads:
+        return (0,0)
+
+    first = float("inf")
+    last = 0
+    for read in reads:
+        x0, x1 = read.get_covered_range()
+        if x0 < first:
+            first = x0
+        if x1 > last:
+            last = x1
+    return (first, last)
