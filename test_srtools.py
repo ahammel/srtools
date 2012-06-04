@@ -94,12 +94,16 @@ class TestRead:
 
 class TestAlignment:
     def test_str(self):
-        for test_file in glob.glob("test/*"):
+        for test_file in glob.glob("test/*.sam"):
             test_algn = srtools.read_sam(test_file)
             with open("tmp.sam", "w") as f:
                 print(test_algn, file=f)
             assert str(test_algn) == str(srtools.read_sam("tmp.sam"))
         os.remove("tmp.sam")
+
+
+def TestFeature():
+    pass
 
 
 def test_reverse_complement():
@@ -118,6 +122,34 @@ def test_read_sam():
     assert test_algn.head == algn.head
     for test_read in test_algn.reads:
         assert single_read == test_read
+
+
+def test_parse_gff_feature():
+    feature = srtools.parse_gff_feature("Chr1\tTAIR9\tchromosome\t1\t30427671"
+                                        "\t.\t.\t.\tID=Chr1;Name=Chr1")
+    assert feature.sequence == "Chr1"
+    assert feature.source == "TAIR9"
+    assert feature.f_type == "chromosome"
+    assert feature.start == 1
+    assert feature.end == 30427671
+    assert feature.score == None
+    assert feature.strand == None
+    assert feature.frame == None
+    assert feature.attribute == "ID=Chr1;Name=Chr1"
+
+
+def test_read_gff():
+    features = srtools.read_gff("test/test.gff")
+    assert features.head == "## Header\n"
+    assert features.features[0].sequence == "Chr1"
+    assert features.features[0].source == "TAIR9"
+    assert features.features[0].f_type == "chromosome"
+    assert features.features[0].start == 1
+    assert features.features[0].end == 30427671
+    assert features.features[0].score == None
+    assert features.features[0].strand == None
+    assert features.features[0].frame == None
+    assert features.features[0].attribute == "ID=Chr1;Name=Chr1"
 
 
 def test_convert_indecies():
