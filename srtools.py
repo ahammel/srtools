@@ -121,6 +121,12 @@ class Alignment():
         readstr = "\n".join([str(read) for read in self.reads])
         return headstr + readstr
 
+    def filter_reads(self, function):
+        """Returns a list of reads where function(read) returns a truthy value.
+
+        """
+        return [r for r in self.reads if function(r)]
+
 
 class Feature():
     """A GFF genomic feature."""

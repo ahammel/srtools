@@ -108,6 +108,12 @@ class TestAlignment:
             assert str(test_algn) == str(srtools.read_sam("tmp.sam"))
         os.remove("tmp.sam")
 
+    def test_filter_reads(self):
+        test_reads = srtools.read_sam("test/test_expressed_locus.sam")
+        filtered_reads = test_reads.filter_reads(lambda x: 2 <= x.pos <= 15)
+        assert filtered_reads[0].qname == "SRR360147.3"
+        assert filtered_reads[1].qname == "SRR360147.2"
+
 
 def TestFeature():
     pass
