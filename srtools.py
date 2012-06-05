@@ -73,40 +73,13 @@ class Read():
                  self.tlen, self.seq, self.qual] + self.tags
         return "\t".join([str(x) for x in attrs])
 
-    def reverse(self):
-        """Returns a reversed read. The sequence is reverse complemented, and
-        other flags are changed appropriately.
-
-        """
-        if self.tlen > 0:
-            new_pos = self.pos + self.tlen - 1
-        else:
-            new_pos = self.pos + self.tlen + 1
-        r_read = Read(qname = self.qname,
-                      flag = self.flag,
-                      rname = self.rname,
-                      pos = new_pos,
-                      mapq = self.mapq,
-                      cigar = Read.print_cigar(reversed(self.cigar)),
-                      rnext = self.rnext,
-                      pnext = self.pnext,
-                      tlen = -self.tlen,
-                      seq = reverse_complement(self.seq),
-                      qual = self.qual[::-1],
-                      tags = self.tags)
-        return r_read
-
     def get_covered_range(self):
         """Returns a tuple consisiting of the first and last position covered
         by the read.
 
         """
-        if self.tlen < 0:
-            last_base = self.pos
-            first_base = self.pos + self.tlen + 1
-        else:
-            first_base = self.pos
-            last_base = self.pos + self.tlen - 1
+        first_base = self.pos
+        last_base = self.pos + sum([i for i, o in self.cigar if o == "M"]) - 1
         return (first_base, last_base)
 
 
@@ -298,25 +271,10 @@ def majority(nucleotides, cutoff=0.5):
     return consensus
 
     
-def normalize(reads):
-    """Returns a list of reads identical to the input, but with all of them
-    facing the same direction (i.e., reads with negative tlen are reversed).
-    Helper function for consensus.
-
-    """
-    n_reads = []
-    for r in reads:
-        if r.tlen < 0:
-            n_reads.append(r.reverse())
-        else:
-            n_reads.append(r)
-    return n_reads
-
-
 def consensus(reads, cutoff=0.5):
     """Returns the consensus sequence of a collection of reads."""
     all_nucleotides = {}
-    for read in dot_indels(normalize(reads)):
+    for read in dot_indels(reads):
         seq, cigar, pos = read
         if pos == 0:
             raise UnmappedReadError
@@ -342,9 +300,12 @@ def overlaps(read1, read2):
     False otherwise.
 
     """
-    r1 = (read1.pos, read1.pos + read1.tlen)
-    r2 = (read2.pos, read2.pos + read2.tlen)
-    return max(r1) > min(r2)
+    r1 = read1.get_covered_range()
+    r2 = read2.get_covered_range()
+
+    r_overlap = r1[1] in set(range(r2[0], r2[1]+1))
+    l_overlap = r2[1] in set(range(r1[0], r1[1]+1))
+    return r_overlap or l_overlap
 
 
 def expressed_loci(reads):

@@ -82,16 +82,6 @@ class TestRead:
     def test_str(self):
         assert str(single_read) == sam_str
 
-    def test_reverse(self):
-        test_rc = srtools.read_sam("test/test_rc.sam")
-        seq, rc = test_rc.reads
-        print("Seq: ", seq)
-        print("RRC: ", rc.reverse())
-        print("RC: ", rc)
-        print("RSeq: ", seq.reverse())
-        assert seq.reverse() == rc
-        assert rc.reverse() == seq
-
     def test_get_covered_range(self):
         test_reads = srtools.read_sam("test/test_expressed_locus.sam").reads 
         assert test_reads[0].get_covered_range() == (1, 5)
@@ -204,7 +194,7 @@ def test_consensus():
     assert srtools.consensus(indel_algn.reads) ==\
          "AGATGACGGAAGCTTGATCTCACGAANNNNNNNNTTNNCATCCNNNTNNT"
 
-    assert srtools.consensus(rc_align.reads) == "AAACCCTTTT"
+    assert srtools.consensus(rc_align.reads) == "AAAGGGAAAA"
 
 
 def test_overlaps():
