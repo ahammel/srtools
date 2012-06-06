@@ -1,2 +1,4 @@
 ## Header
-Chr1	TAIR9	chromosome	1	30427671	.	.	.	ID=Chr1;Name=Chr1
+Chr1	TAIR9	chromosome	1	30427671	.	.	.	f1
+Chr1	TAIR9	gene	1	800	.	.	.	f2
+Chr2	TAIR9	gene	1	800	.	.	.	f3

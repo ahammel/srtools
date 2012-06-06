@@ -100,6 +100,20 @@ class Alignment():
         """
         return [r for r in self.reads if function(r)]
 
+    def collect_reads(self, function):
+        """Returns a generator which yields lists of consecutive reads which
+        all return the same value when the specified function is applied.
+
+        """
+        collection = [self.reads[0]]
+        for read in self.reads[1:]:
+            if function(read) == function(collection[-1]):
+                collection.append(read)
+            else:
+                yield collection
+                collection = [read]
+        yield collection
+
 
 class Feature():
     """A GFF genomic feature."""
@@ -122,13 +136,33 @@ class GenomeAnnotation():
         self.head = head
         self.features = features
 
+    def filter_features(self, function):
+        """Returns a list of features where function(feature) reutrns a truthy
+        value.
+
+        """
+        return [f for f in self.features if function(f)]
+
+    def collect_features(self, function):
+        """REturns a generator which yields lists of consecutive features which
+        all return the same value when the specified function is applied.
+
+        """
+        collection = [self.features[0]]
+        for feature in self.features[1:]:
+            if function(feature) == function(collection[-1]):
+                collection.append(feature)
+            else:
+                yield collection
+                collection = [feature]
+        yield collection
 
 def reverse_complement(sequence):
-    rc = ""
+    rc = []
     seq = list(sequence)
     while seq:
-        rc += COMPLEMENT[seq.pop()]       
-    return rc
+        rc.append(COMPLEMENT[seq.pop()])
+    return "".join(rc)
 
 
 def parse_sam_read(string):
@@ -328,9 +362,8 @@ def coverage(reads):
     if not reads:
         return (0,0)
 
-    first = float("inf")
-    last = 0
-    for read in reads:
+    first, last = reads[0].get_covered_range() 
+    for read in reads[1:]:
         x0, x1 = read.get_covered_range()
         if x0 < first:
             first = x0

@@ -104,9 +104,30 @@ class TestAlignment:
         assert filtered_reads[0].qname == "SRR360147.3"
         assert filtered_reads[1].qname == "SRR360147.2"
 
+    def test_collect_reads(self):
+        test_reads = srtools.read_sam("test/test_expressed_locus.sam")
+        collected_reads = test_reads.collect_reads(lambda x: x.pos < 5)
+        first_batch = next(collected_reads)
+        second_batch = next(collected_reads)
+        assert first_batch[0].qname == "SRR360147.1"
+        assert first_batch[1].qname == "SRR360147.3"
+        assert second_batch[0].qname == "SRR360147.2"
+        assert second_batch[1].qname == "SRR360147.4"
 
-def TestFeature():
+
+class TestFeature():
     pass
+
+
+class TestGenomeAnnotation():
+    annotation = srtools.read_gff("test/test.gff")
+    collected_features =\
+        annotation.collect_features(lambda x: "1" in x.sequence)
+    first_batch = next(collected_features)
+    second_batch = next(collected_features)
+    assert first_batch[0].attribute == "f1"
+    assert first_batch[1].attribute == "f2"
+    assert second_batch[0].attribute == "f3"
 
 
 def test_reverse_complement():
@@ -152,7 +173,7 @@ def test_read_gff():
     assert features.features[0].score == None
     assert features.features[0].strand == None
     assert features.features[0].frame == None
-    assert features.features[0].attribute == "ID=Chr1;Name=Chr1"
+    assert features.features[0].attribute == "f1"
 
 
 def test_convert_indecies():
