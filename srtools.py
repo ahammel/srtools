@@ -370,3 +370,19 @@ def coverage(reads):
         if x1 > last:
             last = x1
     return (first, last)
+
+
+def in_features(reads, features):
+    """Returns a boolean indicating whether any of the reads in the first
+    argument overlap with any of the features in the second.
+
+    """
+    overlap = False
+    r0, r1 = coverage(reads)
+    for f in features:
+        if f.start <= r0 <= f.end or f.start <= r1 <= f.end:
+            overlap = True
+            break
+        elif f.start > r1:
+            break
+    return overlap

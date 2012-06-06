@@ -257,3 +257,13 @@ def test_coverage():
     assert srtools.coverage(test_reads[:4]) == (1,18)
     assert srtools.coverage(test_reads[2:]) == (13,18)
     assert srtools.coverage(test_reads[1:]) == (3,18)
+
+def test_in_features():
+    alignment = srtools.read_sam("test/test_expressed_locus.sam")
+    annotation = srtools.read_gff("test/test.gff")
+    genes = annotation.filter_features(lambda x: x.f_type == "gene")
+    locus_gen = srtools.expressed_loci(alignment.reads)
+    group1 = next(locus_gen)
+    group2 = next(locus_gen)
+    assert not srtools.in_features(group1, genes)
+    assert srtools.in_features(group2, genes)

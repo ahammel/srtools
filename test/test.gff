@@ -1,4 +1,4 @@
 ## Header
 Chr1	TAIR9	chromosome	1	30427671	.	.	.	f1
-Chr1	TAIR9	gene	1	800	.	.	.	f2
-Chr2	TAIR9	gene	1	800	.	.	.	f3
+Chr1	TAIR9	gene	10	800	.	.	.	f2
+Chr2	TAIR9	gene	100	800	.	.	.	f3
