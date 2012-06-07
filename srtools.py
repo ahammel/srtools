@@ -173,6 +173,19 @@ def parse_sam_read(string):
                 fields[10], tags=fields[11:])
 
 
+def lazy_sam_generator(samfile):
+    headlines = []
+    with open(samfile) as f:
+        for line in f:
+            if line.startswith('@'):
+                headlines.append(line)
+            else:
+                if headlines:
+                    yield "".join(headlines)
+                    headlines = False
+                yield parse_sam_read(line)
+
+
 def read_sam(samfile):
     """Creates an Alignment object from a correctly formatted SAM file.
     
@@ -182,18 +195,9 @@ def read_sam(samfile):
     is no backtracking. Once you've read a read, it gets garbage collected.
 
     """
-    headlines = []
-    with open(samfile) as f:
-        while True:
-            line = f.readline()
-            if line.startswith("@"):
-                headlines.append(line)
-            else:
-                reads = ((parse_sam_read(read)\
-                          for read in [line] + f.readlines()\
-                          if read))
-                break
-    return Alignment(head="".join(headlines), reads=reads)
+    lines = lazy_sam_generator(samfile)
+    head = next(lines)
+    return Alignment(head=head, reads=lines)
 
 
 def parse_gff_feature(feature_string):
