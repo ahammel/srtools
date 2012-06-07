@@ -43,6 +43,7 @@ headstr = """\
 algn = srtools.Alignment(head=headstr, reads=[single_read])
 
 indel_algn = srtools.read_sam("./test/test_indel.sam")
+indel_algn.reads = list(indel_algn.reads)
 rc_align = srtools.read_sam("test/test_rc_consensus.sam")
 
 class TestRead:
@@ -83,7 +84,8 @@ class TestRead:
         assert str(single_read) == sam_str
 
     def test_get_covered_range(self):
-        test_reads = srtools.read_sam("test/test_expressed_locus.sam").reads 
+        test_reads =\
+            list(srtools.read_sam("test/test_expressed_locus.sam").reads) 
         assert test_reads[0].get_covered_range() == (1, 5)
         assert test_reads[1].get_covered_range() == (3, 7)
         assert test_reads[2].get_covered_range() == (13, 17)
@@ -95,6 +97,7 @@ class TestAlignment:
             test_algn = srtools.read_sam(test_file)
             with open("tmp.sam", "w") as f:
                 print(test_algn, file=f)
+            test_algn = srtools.read_sam(test_file)
             assert str(test_algn) == str(srtools.read_sam("tmp.sam"))
         os.remove("tmp.sam")
 
@@ -250,7 +253,8 @@ def test_expressed_loci():
 
 
 def test_coverage():
-    test_reads = srtools.read_sam("test/test_expressed_locus.sam").reads
+    test_reads =\
+        list(srtools.read_sam("test/test_expressed_locus.sam").reads)
     assert srtools.coverage(test_reads[:1]) == (1,5)
     assert srtools.coverage(test_reads[:2]) == (1,7)
     assert srtools.coverage(test_reads[:3]) == (1,17)

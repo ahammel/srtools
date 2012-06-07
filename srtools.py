@@ -105,8 +105,8 @@ class Alignment():
         all return the same value when the specified function is applied.
 
         """
-        collection = [self.reads[0]]
-        for read in self.reads[1:]:
+        collection = [next(self.reads)]
+        for read in self.reads:
             if function(read) == function(collection[-1]):
                 collection.append(read)
             else:
@@ -174,15 +174,25 @@ def parse_sam_read(string):
 
 
 def read_sam(samfile):
-    """Creates an Alignment object from a correctly formatted SAM file"""
+    """Creates an Alignment object from a correctly formatted SAM file.
+    
+    Note: the Alignment.reads object is a generator expression. This (hopefully)
+    reduces space complexity to the point where it's possible to actually read
+    a real SAM file (which can easily be 50 Gb) in reasonable memory, but there
+    is no backtracking. Once you've read a read, it gets garbage collected.
+
+    """
     headlines = []
-    reads = []
     with open(samfile) as f:
-        for line in f:
+        while True:
+            line = f.readline()
             if line.startswith("@"):
                 headlines.append(line)
-            elif line:
-                reads.append(parse_sam_read(line))
+            else:
+                reads = ((parse_sam_read(read)\
+                          for read in [line] + f.readlines()\
+                          if read))
+                break
     return Alignment(head="".join(headlines), reads=reads)
 
 
