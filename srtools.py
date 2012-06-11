@@ -95,24 +95,34 @@ class Alignment():
         return headstr + readstr
 
     def filter_reads(self, function):
-        """Returns a list of reads where function(read) returns a truthy value.
+        """Returns a generator of reads where function(read) returns a truthy 
+        value.
 
         """
-        return [r for r in self.reads if function(r)]
+        for r in self.reads:
+            if function(r):
+                yield r
+
+    def filter_consecutive_reads(self, function):
+        """Returns a generator of consecutive reads where function(read)
+        returns a truthy value. Helper method fo Alignment.collect_reads.
+
+        """
+        reads = self.reads
+        first_read = next(reads)
+        test_value = function(first_read)
+        yield first_read
+        for read in self.reads:
+            if function(read) == test_value:
+                yield read
 
     def collect_reads(self, function):
-        """Returns a generator which yields lists of consecutive reads which
-        all return the same value when the specified function is applied.
+        """Returns a generator which yields generators of consecutive reads 
+        which all return the same value when the specified function is applied.
 
         """
-        collection = [next(self.reads)]
-        for read in self.reads:
-            if function(read) == function(collection[-1]):
-                collection.append(read)
-            else:
-                yield collection
-                collection = [read]
-        yield collection
+        while True:
+            yield self.filter_consecutive_reads(function)
 
 
 class Feature():
@@ -359,7 +369,11 @@ def overlaps(read1, read2):
 def expressed_loci(reads):
     """Returns a generator object which yields lists of overlapping reads"""
     locus = []
-    for read in reads:
+    while True:
+        try:
+            read = next(reads)
+        except StopIteration:
+            break
         if not locus or overlaps(locus[-1], read):
             locus.append(read)
         else:

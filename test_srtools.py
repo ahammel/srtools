@@ -104,18 +104,22 @@ class TestAlignment:
     def test_filter_reads(self):
         test_reads = srtools.read_sam("test/test_expressed_locus.sam")
         filtered_reads = test_reads.filter_reads(lambda x: 2 <= x.pos <= 15)
-        assert filtered_reads[0].qname == "SRR360147.3"
-        assert filtered_reads[1].qname == "SRR360147.2"
+        assert next(filtered_reads).qname == "SRR360147.3"
+        assert next(filtered_reads).qname == "SRR360147.2"
 
     def test_collect_reads(self):
         test_reads = srtools.read_sam("test/test_expressed_locus.sam")
         collected_reads = test_reads.collect_reads(lambda x: x.pos < 5)
         first_batch = next(collected_reads)
         second_batch = next(collected_reads)
-        assert first_batch[0].qname == "SRR360147.1"
-        assert first_batch[1].qname == "SRR360147.3"
-        assert second_batch[0].qname == "SRR360147.2"
-        assert second_batch[1].qname == "SRR360147.4"
+        first_batch_0 = next(first_batch)
+        first_batch_1 = next(first_batch)
+        second_batch_0 = next(second_batch)
+        second_batch_1 = next(second_batch)
+        assert first_batch_0.qname == "SRR360147.1"
+        assert first_batch_1.qname == "SRR360147.3"
+        assert second_batch_0.qname == "SRR360147.2"
+        assert second_batch_1.qname == "SRR360147.4"
 
 
 class TestFeature():
