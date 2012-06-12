@@ -154,7 +154,7 @@ class GenomeAnnotation():
         return [f for f in self.features if function(f)]
 
     def collect_features(self, function):
-        """REturns a generator which yields lists of consecutive features which
+        """Returns a generator which yields lists of consecutive features which
         all return the same value when the specified function is applied.
 
         """
@@ -166,6 +166,7 @@ class GenomeAnnotation():
                 yield collection
                 collection = [feature]
         yield collection
+
 
 def reverse_complement(sequence):
     rc = []
@@ -321,7 +322,7 @@ def majority(nucleotides, cutoff=0.5):
 
     """
     for i in nucleotides:
-        if len([x for x in nucleotides if x == i]) / len(nucleotides) > cutoff:
+        if nucleotides.count(i) / len(nucleotides) > cutoff:
             consensus = i
             break
     else:
@@ -343,14 +344,15 @@ def consensus(reads, cutoff=0.5):
                 all_nucleotides[index].append(nuc)
                 index += 1
 
-    consensus_sequence = ""
+    consensus_sequence = []
     for position in range(min(all_nucleotides), max(all_nucleotides) + 1):
         try:
-            consensus_sequence += \
-                majority(all_nucleotides[position], cutoff=cutoff)
+            n = majority(all_nucleotides[position], cutoff=cutoff)
+            consensus_sequence.append(n)
         except KeyError:
-            consensus_sequence += 'N'
-    return consensus_sequence.replace('.', '')
+            consensus_sequence.append("N")
+    consensus = "".join(consensus_sequence)
+    return consensus.replace('.', '')
 
 
 def overlaps(read1, read2):
@@ -358,22 +360,16 @@ def overlaps(read1, read2):
     False otherwise.
 
     """
-    r1 = read1.get_covered_range()
-    r2 = read2.get_covered_range()
+    x0, x1 = read1.get_covered_range()
+    y0, y1 = read2.get_covered_range()
 
-    r_overlap = r1[1] in set(range(r2[0], r2[1]+1))
-    l_overlap = r2[1] in set(range(r1[0], r1[1]+1))
-    return r_overlap or l_overlap
+    return x0 <= y0 <= x1 or y0 <= y1 <= x1
 
 
 def expressed_loci(reads):
     """Returns a generator object which yields lists of overlapping reads"""
     locus = []
-    while True:
-        try:
-            read = next(reads)
-        except StopIteration:
-            break
+    for read in reads:
         if not locus or overlaps(locus[-1], read):
             locus.append(read)
         else:

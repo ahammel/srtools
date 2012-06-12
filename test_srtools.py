@@ -266,6 +266,7 @@ def test_coverage():
     assert srtools.coverage(test_reads[2:]) == (13,18)
     assert srtools.coverage(test_reads[1:]) == (3,18)
 
+
 def test_in_features():
     alignment = srtools.read_sam("test/test_expressed_locus.sam")
     annotation = srtools.read_gff("test/test.gff")
@@ -275,3 +276,11 @@ def test_in_features():
     group2 = next(locus_gen)
     assert not srtools.in_features(group1, genes)
     assert srtools.in_features(group2, genes)
+
+
+def test_speed_test():
+   align = srtools.read_sam("test/speed_test.sam")
+   annotation = srtools.read_gff("test/speed_test.gff")
+   for locus in srtools.expressed_loci(align.reads):
+        srtools.in_features(locus, annotation.features)
+        srtools.consensus(locus)
