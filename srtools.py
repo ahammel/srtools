@@ -1,4 +1,6 @@
 import re
+from collections import Counter
+import sys
 
 
 COMPLEMENT = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A', 'N': 'N'}
@@ -13,25 +15,17 @@ class UnmappedReadError(ValueError):
     pass
 
 
+class NullSequenceError(ValueError):
+    """The exception raised when attempting to illegally manipulate a null
+    sequence (i.e., an empty sequence or one composed entirely of N's).
+    The GC content of a null sequence is undefined, for example.
+
+    """
+    pass
+
+
 class Read():
     """A sam-format sequence read."""
-
-    def read_cigar(cigar):
-        """Takes a cigar string, and returns a list of 2-tuples consisting
-        of the index (int) and the operation (one-character str).
-
-        """
-        return [(int(a), b) for (a, b) in re.findall(r'(\d+)(\D)', cigar)]
-
-    def print_cigar(cigar):
-        """Prints a cigar in the standard SAM format"""
-        if not cigar:
-            cigar_str = '*'
-        else:
-            cigar_str =\
-                ''.join([str(char) for substr in cigar for char in substr])
-                # Strings and flattens the list of tuples
-        return cigar_str
 
     def __init__(self, qname, flag, rname, pos, mapq, cigar, rnext, pnext,
                  tlen, seq, qual, tags=[]):
@@ -40,7 +34,7 @@ class Read():
         self.rname = str(rname)
         self.pos = int(pos)
         self.mapq = int(mapq)
-        self.cigar = Read.read_cigar(cigar)
+        self.cigar = read_cigar(cigar)
         self.rnext = str(rnext)
         self.pnext = int(pnext)
         self.tlen = int(tlen)
@@ -69,7 +63,7 @@ class Read():
 
     def __str__(self):
         attrs = [self.qname, self.flag, self.rname, self.pos, self.mapq,
-                 Read.print_cigar(self.cigar), self.rnext, self.pnext,
+                 print_cigar(self.cigar), self.rnext, self.pnext,
                  self.tlen, self.seq, self.qual] + self.tags
         return "\t".join([str(x) for x in attrs])
 
@@ -166,6 +160,25 @@ class GenomeAnnotation():
                 yield collection
                 collection = [feature]
         yield collection
+
+
+
+def read_cigar(cigar):
+    """Takes a cigar string, and returns a list of 2-tuples consisting
+    of the index (int) and the operation (one-character str).
+
+    """
+    return [(int(a), b) for (a, b) in re.findall(r'(\d+)(\D)', cigar)]
+
+def print_cigar(cigar):
+    """Prints a cigar in the standard SAM format"""
+    if not cigar:
+        cigar_str = '*'
+    else:
+        cigar_str =\
+               ''.join([str(char) for substr in cigar for char in substr])
+               # Strings and flattens the list of tuples
+    return cigar_str
 
 
 def reverse_complement(sequence):
@@ -410,3 +423,101 @@ def in_features(reads, features):
         elif f.start > r1:
             break
     return overlap
+
+
+def gc_content(sequence):
+    """Returns the fraction of the sequence which consists of GC base pairs.
+
+    """
+    base_counts = {x: sequence.count(x) for x in sequence if x in "ACGT"}
+    base_counts.setdefault("G", 0)
+    base_counts.setdefault("C", 0)
+    total = sum(base_counts.values())
+
+    if total == 0:
+        raise NullSequenceError
+
+    gc_count = base_counts["G"] + base_counts["C"]
+    return gc_count / total
+
+
+def summary_statistics(reads):
+    """Returns a dictionary of summary statistics of the reads. The keys are:
+
+        "rnames":     a Counter of the rnames of the reads
+        "flags":      a Counter of the bitflags of the reads
+        "cigars":     a Counter of the string representations of the cigars
+                      of the reads
+        "gc":         the average GC content of the sequences.
+        "read_count": the number of sam reads
+        "hash:        a Counter of the qnames of the reads
+
+    """ 
+    summary = {"rnames":Counter(),
+               "flags": Counter(),
+               "cigars": Counter(),
+               "gc": 0,
+               "read_count": 0,
+               "hashes": Counter()}
+
+    for read in reads:
+        summary["rnames"][read.rname] += 1
+        summary["flags"][read.flag] += 1
+        summary["cigars"][print_cigar(read.cigar)] += 1
+        summary["gc"] += gc_content(read.seq)
+        summary["read_count"] += 1
+        summary["hashes"][read.qname] += 1
+
+    summary["gc"] /= summary["read_count"]
+    return summary
+
+
+def print_summary_statistics(input_file, output_file=sys.stdout):
+    """Pretty-prints the summary statistics of a sam file to the specified
+    output file, or to stdout if not output_file is selected.
+
+    """
+    alignment = read_sam(input_file)
+    stats = summary_statistics(alignment.reads)
+    cnt=0
+
+    f = open(output_file, "w")
+
+    print('\n\033[96mSummary of Sam File\033[0m', '\033[96m' + input_file +\
+          '\033[0m\n', file=f)
+
+    print('\033[92mTotal Reads Mapped to Chromosomes\033[0m...',\
+          file=f)
+
+    for i in sorted(stats["rnames"].items()):
+                    print("%-8s %8i" % i,\
+                    ' ' + str((float(i[1])/stats["read_count"])*100)[:5] + '%',\
+                    file=f)
+
+    print('\n\033[92mTotal Counts of Bit Flags\033[0m...', file=f)
+    for fl in sorted(stats["flags"].items(), key=lambda x: str(x[0])):
+        print("%-8s %8i" % fl,\
+              ' ' + str((float(fl[1])/stats["read_count"])*100)[0:5] + '%',\
+              file=f)
+
+    print('\n\033[92mTotal Counts of Cigar Strings\033[0m...', file=f)
+    for c in sorted(list(stats["cigars"].items()),\
+                    key=lambda x:x[1], reverse=True):
+        if cnt < 20:
+            print("%-10s %5i" % c,\
+                  ' ' + str((float(c[1])/stats["read_count"])*100)[0:5] + '%',\
+                  file=f)
+            cnt += 1
+
+    print('\n\033[92mAverage % GC\033[0m...', file=f)
+    print(stats["gc"], file=f)
+
+    print('\n\033[92mTotal Reads (Mate Pairs and Orphans)\033[0m',\
+          file=f)
+    print(len(stats["hashes"]), file=f)
+
+    print('\n\033[92mTotal Reads\033[0m', file=f)
+    print(stats["read_count"], file=f)
+    print('', file=f)
+
+    f.close()

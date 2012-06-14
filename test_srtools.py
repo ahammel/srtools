@@ -48,13 +48,13 @@ rc_align = srtools.read_sam("test/test_rc_consensus.sam")
 
 class TestRead:
     def test_read_cigar(self):
-        """Note: there should never be a need to use Read.read_cigar like
+        """Note: there should never be a need to use srtools.read_cigar like
         this.
 
         """
-        assert srtools.Read.read_cigar('*') == []
-        assert srtools.Read.read_cigar('40M') == [(40, 'M')]
-        assert srtools.Read.read_cigar('18M2D20M') == \
+        assert srtools.read_cigar('*') == []
+        assert srtools.read_cigar('40M') == [(40, 'M')]
+        assert srtools.read_cigar('18M2D20M') == \
                     [(18, 'M'), (2, 'D'), (20, 'M')]
 
     def test_init(self):
@@ -278,9 +278,32 @@ def test_in_features():
     assert srtools.in_features(group2, genes)
 
 
+def test_gc_content():
+    pytest.raises(srtools.NullSequenceError, srtools.gc_content, "")
+    pytest.raises(srtools.NullSequenceError, srtools.gc_content, "NNNNN")
+    assert srtools.gc_content("AAATTT") == 0.0
+    assert srtools.gc_content("GGGGCC") == 1.0
+    assert srtools.gc_content("ACGTACGT") == 0.5
+    assert srtools.gc_content("ACCTACGT") == 0.5
+
+
+def test_summary_statistics():
+    srtools.print_summary_statistics("test/speed_test.sam",
+                                     output_file="test_summary.txt")
+    test_file = open("test_summary.txt")
+    known_file = open("test/david_summary.txt")
+    test_lines = test_file.readlines()
+    known_lines = known_file.readlines()
+    assert test_lines == known_lines
+    test_file.close()
+    known_file.close()
+    os.remove("test_summary.txt")
+
+
 def test_speed_test():
    align = srtools.read_sam("test/speed_test.sam")
    annotation = srtools.read_gff("test/speed_test.gff")
    for locus in srtools.expressed_loci(align.reads):
         srtools.in_features(locus, annotation.features)
         srtools.consensus(locus)
+
