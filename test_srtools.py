@@ -294,7 +294,10 @@ def test_summary_statistics():
     known_file = open("test/david_summary.txt")
     test_lines = test_file.readlines()
     known_lines = known_file.readlines()
-    assert test_lines == known_lines
+    for line in test_lines:
+        assert line in known_lines
+    for line in known_lines:
+        assert line in test_lines
     test_file.close()
     known_file.close()
     os.remove("test_summary.txt")

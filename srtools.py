@@ -479,43 +479,51 @@ def print_summary_statistics(input_file, output_file=sys.stdout):
     """
     alignment = read_sam(input_file)
     stats = summary_statistics(alignment.reads)
-    cnt=0
 
     f = open(output_file, "w")
 
+    #Header
     print('\n\033[96mSummary of Sam File\033[0m', '\033[96m' + input_file +\
           '\033[0m\n', file=f)
 
+    #Chromosome mapping
     print('\033[92mTotal Reads Mapped to Chromosomes\033[0m...',\
           file=f)
 
-    for i in sorted(stats["rnames"].items()):
-                    print("%-8s %8i" % i,\
-                    ' ' + str((float(i[1])/stats["read_count"])*100)[:5] + '%',\
-                    file=f)
+    for rname in sorted(stats["rnames"]):
+        freq = stats["rnames"][rname]
+        rel_freq = freq / stats["read_count"]
+        p_string = "{:8s} {:8d}  {:.1%}".format(rname, freq, rel_freq)
+        print(p_string, file=f)
 
+    #Bitflags
     print('\n\033[92mTotal Counts of Bit Flags\033[0m...', file=f)
-    for fl in sorted(stats["flags"].items(), key=lambda x: str(x[0])):
-        print("%-8s %8i" % fl,\
-              ' ' + str((float(fl[1])/stats["read_count"])*100)[0:5] + '%',\
-              file=f)
-
+    flags = sorted(stats["flags"], key=lambda x: str(x))
+    for flag in flags:
+        freq = stats["flags"][flag] 
+        rel_freq = freq / stats["read_count"]
+        p_string = "{:<8} {:8d} {:>7.1%}".format(flag, freq, rel_freq)
+        print(p_string, file=f)
+   
+    #Cigars
     print('\n\033[92mTotal Counts of Cigar Strings\033[0m...', file=f)
-    for c in sorted(list(stats["cigars"].items()),\
-                    key=lambda x:x[1], reverse=True):
-        if cnt < 20:
-            print("%-10s %5i" % c,\
-                  ' ' + str((float(c[1])/stats["read_count"])*100)[0:5] + '%',\
-                  file=f)
-            cnt += 1
+    cigars = sorted(stats["cigars"], key=lambda x: stats["cigars"][x])
+    cigars.reverse()
+    for cigar in cigars[:20]:
+        freq = stats["cigars"][cigar]
+        rel_freq = freq / stats["read_count"]
+        p_string = "{:10s} {:5d} {:>7.1%}".format(cigar, freq, rel_freq)
+        print(p_string, file=f)
 
+    #GCc content
     print('\n\033[92mAverage % GC\033[0m...', file=f)
     print(stats["gc"], file=f)
 
-    print('\n\033[92mTotal Reads (Mate Pairs and Orphans)\033[0m',\
-          file=f)
+    #Total reads (pair = one read)
+    print('\n\033[92mTotal Reads (Mate Pairs and Orphans)\033[0m', file=f)
     print(len(stats["hashes"]), file=f)
 
+    #Total reads (pair = two reads
     print('\n\033[92mTotal Reads\033[0m', file=f)
     print(stats["read_count"], file=f)
     print('', file=f)
