@@ -444,13 +444,15 @@ def gc_content(sequence):
 def summary_statistics(reads):
     """Returns a dictionary of summary statistics of the reads. The keys are:
 
-        "rnames":     a Counter of the rnames of the reads
-        "flags":      a Counter of the bitflags of the reads
-        "cigars":     a Counter of the string representations of the cigars
-                      of the reads
-        "gc":         the average GC content of the sequences.
-        "read_count": the number of sam reads
-        "hash":        a Counter of the qnames of the reads
+        "rnames":           a Counter of the rnames of the reads
+        "flags":            a Counter of the bitflags of the reads
+        "cigars":           a Counter of the string representations of the 
+                            cigars of the reads
+        "gc":               the average GC content of the sequences.
+        "read_count":       the number of sam reads
+        "hash":             a Counter of the qnames of the reads
+        
+        "rnames_mapped":    a summary of the number of reads with each rname 
 
     """ 
     summary = {"rnames":Counter(),
@@ -495,7 +497,10 @@ def print_summary_statistics(input_file, output_file=sys.stdout):
     f = open(output_file, "w")
 
     #Header
-    print("\n" +  cyan("Summary of Sam File"),  cyan(input_file) + "\n", file=f)
+    head_string = "".join([cyan("Summary of Sam File "),
+                           cyan(input_file) ])
+
+    print("\n" + head_string + "\n", file=f)
 
     #Chromosome mapping
     print(green("Total Reads Mapped to Chromosomes") + "...", file=f)
@@ -503,7 +508,7 @@ def print_summary_statistics(input_file, output_file=sys.stdout):
     for rname in sorted(stats["rnames"]):
         freq = stats["rnames"][rname]
         rel_freq = freq / stats["read_count"]
-        p_string = "{:8s} {:8d}  {:.1%}".format(rname, freq, rel_freq)
+        p_string = "{:8s}{:9d}{:>8.1%}".format(rname, freq, rel_freq)
         print(p_string, file=f)
 
     #Bitflags
@@ -512,7 +517,7 @@ def print_summary_statistics(input_file, output_file=sys.stdout):
     for flag in flags:
         freq = stats["flags"][flag] 
         rel_freq = freq / stats["read_count"]
-        p_string = "{:<8} {:8d} {:>7.1%}".format(flag, freq, rel_freq)
+        p_string = "{:<8}{:9d}{:>8.1%}".format(flag, freq, rel_freq)
         print(p_string, file=f)
    
     #Cigars
@@ -522,7 +527,7 @@ def print_summary_statistics(input_file, output_file=sys.stdout):
     for cigar in cigars[:20]:
         freq = stats["cigars"][cigar]
         rel_freq = freq / stats["read_count"]
-        p_string = "{:10s} {:5d} {:>7.1%}".format(cigar, freq, rel_freq)
+        p_string = "{:10s}{:6d}{:>8.1%}".format(cigar, freq, rel_freq)
         print(p_string, file=f)
 
     #GCc content
