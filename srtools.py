@@ -450,7 +450,7 @@ def summary_statistics(reads):
                       of the reads
         "gc":         the average GC content of the sequences.
         "read_count": the number of sam reads
-        "hash:        a Counter of the qnames of the reads
+        "hash":        a Counter of the qnames of the reads
 
     """ 
     summary = {"rnames":Counter(),
@@ -472,6 +472,18 @@ def summary_statistics(reads):
     return summary
 
 
+#Text colouring functions for pretty-printing.
+
+def cyan(string):
+    """Returns the input string wrapped in terminal codes for cyan text."""
+    return "".join(["\033[96m", string, "\033[0m"])
+
+
+def green(string):
+    """Returns the input string wrapped in terminal codes for green text."""
+    return "".join(["\033[92m", string, "\033[0m"])
+
+
 def print_summary_statistics(input_file, output_file=sys.stdout):
     """Pretty-prints the summary statistics of a sam file to the specified
     output file, or to stdout if not output_file is selected.
@@ -483,12 +495,10 @@ def print_summary_statistics(input_file, output_file=sys.stdout):
     f = open(output_file, "w")
 
     #Header
-    print('\n\033[96mSummary of Sam File\033[0m', '\033[96m' + input_file +\
-          '\033[0m\n', file=f)
+    print("\n" +  cyan("Summary of Sam File"),  cyan(input_file) + "\n", file=f)
 
     #Chromosome mapping
-    print('\033[92mTotal Reads Mapped to Chromosomes\033[0m...',\
-          file=f)
+    print(green("Total Reads Mapped to Chromosomes") + "...", file=f)
 
     for rname in sorted(stats["rnames"]):
         freq = stats["rnames"][rname]
@@ -497,7 +507,7 @@ def print_summary_statistics(input_file, output_file=sys.stdout):
         print(p_string, file=f)
 
     #Bitflags
-    print('\n\033[92mTotal Counts of Bit Flags\033[0m...', file=f)
+    print("\n" + green("Total Counts of Bit Flags") + "...", file=f)
     flags = sorted(stats["flags"], key=lambda x: str(x))
     for flag in flags:
         freq = stats["flags"][flag] 
@@ -506,7 +516,7 @@ def print_summary_statistics(input_file, output_file=sys.stdout):
         print(p_string, file=f)
    
     #Cigars
-    print('\n\033[92mTotal Counts of Cigar Strings\033[0m...', file=f)
+    print("\n" + green("Total Counts of Cigar Strings") + "...", file=f)
     cigars = sorted(stats["cigars"], key=lambda x: stats["cigars"][x])
     cigars.reverse()
     for cigar in cigars[:20]:
@@ -516,16 +526,16 @@ def print_summary_statistics(input_file, output_file=sys.stdout):
         print(p_string, file=f)
 
     #GCc content
-    print('\n\033[92mAverage % GC\033[0m...', file=f)
+    print("\n" + green("Average % GC")+ "...", file=f)
     print(stats["gc"], file=f)
 
     #Total reads (pair = one read)
-    print('\n\033[92mTotal Reads (Mate Pairs and Orphans)\033[0m', file=f)
+    print("\n" + green("Total Reads (Mate Pairs and Orphans)"), file=f)
     print(len(stats["hashes"]), file=f)
 
     #Total reads (pair = two reads
-    print('\n\033[92mTotal Reads\033[0m', file=f)
+    print("\n" + green("Total Reads"), file=f)
     print(stats["read_count"], file=f)
-    print('', file=f)
+    print("", file=f)
 
     f.close()
