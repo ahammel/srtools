@@ -224,6 +224,19 @@ def read_sam(samfile):
     return Alignment(head=head, reads=lines)
 
 
+def read_fasta(fasta_file):
+    """Returns a dictionary a sequence names and values from a fasta-format file."""
+    seq_dict = {}
+    with open(fasta_file) as f:
+        for line in f:
+            if line.startswith(">"):
+                name = line[1:].strip()
+            elif line.strip():
+                seq_dict.setdefault(name, "")
+                seq_dict[name] += line.strip()
+    return seq_dict
+
+
 def parse_gff_feature(feature_string):
     """Creates a Feature object from a GFF feature string."""
     fields = feature_string.strip().split("\t")
@@ -539,7 +552,7 @@ def print_summary_statistics(input_file, output_file=sys.stdout):
     print("\n" + green("Total Reads (Mate Pairs and Orphans)"), file=f)
     print(len(stats["hashes"]), file=f)
 
-    #Total reads (pair = two reads
+    #Total reads (pair = two reads)
     print("\n" + green("Total Reads"), file=f)
     print(stats["read_count"], file=f)
     print("", file=f)

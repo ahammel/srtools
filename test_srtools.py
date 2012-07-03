@@ -143,6 +143,7 @@ def test_reverse_complement():
     assert srtools.reverse_complement("ACGT") == "ACGT"
     assert srtools.reverse_complement("GCCAT") == "ATGGC"
 
+
 def test_parse_sam_read():
     test_read = srtools.parse_sam_read(sam_str)
     assert test_read == single_read
@@ -153,6 +154,13 @@ def test_read_sam():
     assert test_algn.head == algn.head
     for test_read in test_algn.reads:
         assert single_read == test_read
+
+
+def test_read_fasta():
+    test_reads = srtools.read_fasta("test/fasta.fa")
+    assert len(test_reads) == 2
+    assert test_reads["read1"] == "AAAAAAAAAAAAAA"
+    assert test_reads["read2"] == "AGTAAGTAAAAAAAAATAA" 
 
 
 def test_parse_gff_feature():
