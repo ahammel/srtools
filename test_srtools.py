@@ -160,7 +160,7 @@ def test_read_fasta():
     test_reads = srtools.read_fasta("test/fasta.fa")
     assert len(test_reads) == 2
     assert test_reads["read1"] == "AAAAAAAAAAAAAA"
-    assert test_reads["read2"] == "AGTAAGTAAAAAAAAATAA" 
+    assert test_reads["read2"] == "ATGAATGAATAAAAAAAAATAATTATTTCAT" 
 
 
 def test_parse_gff_feature():
@@ -295,6 +295,37 @@ def test_gc_content():
     assert srtools.gc_content("ACCTACGT") == 0.5
 
 
+class TestORFFunctions():
+
+    #>read1
+    #AAAAAAAAAAAAAA
+    #>read2
+    #ATGAATGAATAAAAAAAAATAATTATTTCAT
+
+    reads = srtools.read_fasta("test/fasta.fa")
+
+    def test_reading_frames(self):
+        assert srtools.reading_frames(self.reads["read1"]) == \
+            [["AAA", "AAA", "AAA", "AAA", "AA"],
+             ["TTT", "TTT", "TTT", "TTT", "TT"],
+             ["A", "AAA", "AAA", "AAA", "AAA", "A"],
+             ["T", "TTT", "TTT", "TTT", "TTT", "T"],
+             ["AA", "AAA", "AAA", "AAA", "AAA"],
+             ["TT", "TTT", "TTT", "TTT", "TTT"]]
+
+        assert srtools.reading_frames(self.reads["read2"]) == \
+            [["ATG", "AAT", "GAA", "TAA", "AAA", "AAA", "ATA", "ATT", "ATT", "TCA", "T"],
+             ["ATG", "AAA", "TAA", "TTA", "TTT", "TTT", "TTT", "ATT", "CAT", "TCA", "T"],
+             ["A", "TGA", "ATG", "AAT", "AAA", "AAA", "AAA", "TAA", "TTA", "TTT", "CAT"],
+             ["A", "TGA", "AAT", "AAT", "TAT", "TTT", "TTT", "TTA", "TTC", "ATT", "CAT"],
+             ["AT", "GAA", "TGA", "ATA", "AAA", "AAA", "AAT", "AAT", "TAT", "TTC", "AT"],
+             ["AT", "GAA", "ATA", "ATT", "ATT", "TTT", "TTT", "TAT", "TCA", "TTC", "AT"]]
+
+    def test_open_reading_frames(self):
+        assert srtools.open_reading_frames(self.reads["read1"]) == []
+        assert srtools.open_reading_frames(self.reads["read2"]) == \
+            ["ATGAATGAA", "ATGAAA", "ATGAATAAAAAAAAA"]
+
 def test_summary_statistics():
     srtools.print_summary_statistics("test/speed_test.sam",
                                      output_file="test_summary.txt")
@@ -317,4 +348,3 @@ def test_speed_test():
    for locus in srtools.expressed_loci(align.reads):
         srtools.in_features(locus, annotation.features)
         srtools.consensus(locus)
-

@@ -1,6 +1,7 @@
 import re
 from collections import Counter
 import sys
+from itertools import product
 
 
 COMPLEMENT = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A', 'N': 'N'}
@@ -452,6 +453,36 @@ def gc_content(sequence):
 
     gc_count = base_counts["G"] + base_counts["C"]
     return gc_count / total
+
+
+def reading_frames(sequence):
+    """Returns the six possible reading frames of the sequence."""
+
+    def block_sequence(seq, start, n):
+        blocks = [] 
+        if start != 0:
+            blocks.append(seq[:start])
+        blocks.extend([seq[i:i+n] for i in range(start, len(seq), n)])
+        return  blocks
+
+    frames = []
+
+    for i in range(3):
+        frames.append(block_sequence(sequence, i, 3))
+        frames.append(block_sequence(reverse_complement(sequence), i, 3))
+
+    return frames
+
+
+def open_reading_frames(sequence):
+    """Returns a list of the ORFs of the sequence in all six translation frames."""
+    stop_codons = ["TAG", "TAA", "TGA"]
+    orfs = []
+    for frame in reading_frames(sequence):
+        starts = [i for i, x in enumerate(frame) if x == "ATG"]
+        stops = [i for i, x in enumerate(frame) if x in stop_codons]
+        orfs.extend(["".join(frame[a:b]) for a, b in product(starts, stops) if a < b])
+    return orfs
 
 
 def summary_statistics(reads):
