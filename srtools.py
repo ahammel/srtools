@@ -1,7 +1,7 @@
 import re
 from collections import Counter
 import sys
-from itertools import product
+import itertools
 import random
 
 
@@ -487,7 +487,9 @@ def open_reading_frames(sequence):
     for frame in reading_frames(sequence):
         starts = [i for i, x in enumerate(frame) if x == "ATG"]
         stops = [i for i, x in enumerate(frame) if x in stop_codons]
-        orfs.extend(["".join(frame[a:b]) for a, b in product(starts, stops) if a < b])
+        product = itertools.product(starts, stops)
+        fr_list = ["".join(frame[a:b]) for a, b in product if a < b]
+        orfs.extend(fr_list)
     return orfs
 
 
