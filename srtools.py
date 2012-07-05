@@ -2,6 +2,7 @@ import re
 from collections import Counter
 import sys
 from itertools import product
+import random
 
 
 COMPLEMENT = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A', 'N': 'N'}
@@ -455,15 +456,20 @@ def gc_content(sequence):
     return gc_count / total
 
 
+def block_sequence(seq, start, n):
+    """Splits a sequence into blocks of size n, prepended by the first 'start' items.
+    Helper function for reading_frames.
+
+    """
+    blocks = [] 
+    if start != 0:
+        blocks.append(seq[:start])
+    blocks.extend([seq[i:i+n] for i in range(start, len(seq), n)])
+    return  blocks
+
+
 def reading_frames(sequence):
     """Returns the six possible reading frames of the sequence."""
-
-    def block_sequence(seq, start, n):
-        blocks = [] 
-        if start != 0:
-            blocks.append(seq[:start])
-        blocks.extend([seq[i:i+n] for i in range(start, len(seq), n)])
-        return  blocks
 
     frames = []
 
@@ -483,6 +489,11 @@ def open_reading_frames(sequence):
         stops = [i for i, x in enumerate(frame) if x in stop_codons]
         orfs.extend(["".join(frame[a:b]) for a, b in product(starts, stops) if a < b])
     return orfs
+
+
+def random_sequence(length):
+    """Returns a random nucleotide sequence of the specified length."""
+    return "".join([random.choice("ACGT") for i in range(length)])
 
 
 def summary_statistics(reads):

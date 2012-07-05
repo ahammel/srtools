@@ -297,11 +297,6 @@ def test_gc_content():
 
 class TestORFFunctions():
 
-    #>read1
-    #AAAAAAAAAAAAAA
-    #>read2
-    #ATGAATGAATAAAAAAAAATAATTATTTCAT
-
     reads = srtools.read_fasta("test/fasta.fa")
 
     def test_reading_frames(self):
@@ -340,6 +335,14 @@ def test_summary_statistics():
     test_file.close()
     known_file.close()
     os.remove("test_summary.txt")
+
+
+def test_random_sequence():
+    seq = srtools.random_sequence(10)
+    assert len(seq) == 10
+    for letter in seq:
+        assert letter in "ACGT"
+    print(seq)
 
 
 def test_speed_test():
