@@ -498,6 +498,17 @@ def random_sequence(length):
     return "".join([random.choice("ACGT") for i in range(length)])
 
 
+def randomize_sequence(seq):
+    """Randomizes a sequence of nucleotides, preserving N's"""
+    nucs = []
+    for nucleotide in seq:
+        if nucleotide == "N":
+            nucs.append("N")
+        else:
+            nucs.append(random.choice("ACGT"))
+    return "".join(nucs)
+
+
 def summary_statistics(reads):
     """Returns a dictionary of summary statistics of the reads. The keys are:
 

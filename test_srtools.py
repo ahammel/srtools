@@ -321,6 +321,21 @@ class TestORFFunctions():
         assert srtools.open_reading_frames(self.reads["read2"]) == \
             ["ATGAATGAA", "ATGAAA", "ATGAATAAAAAAAAA"]
 
+def test_random_sequence():
+    seq = srtools.random_sequence(10)
+    assert len(seq) == 10
+    for letter in seq:
+        assert letter in "ACGT"
+    print(seq)
+
+
+def test_randomize_sequence():
+    seq = "AACGNNNNAACG"
+    rseq = srtools.randomize_sequence(seq)
+    assert rseq[4:8] == "NNNN"
+    assert rseq != seq
+
+
 def test_summary_statistics():
     srtools.print_summary_statistics("test/speed_test.sam",
                                      output_file="test_summary.txt")
@@ -343,6 +358,13 @@ def test_random_sequence():
     for letter in seq:
         assert letter in "ACGT"
     print(seq)
+
+
+def test_randomize_sequence():
+    seq = "AACGNNNNAACG"
+    rseq = srtools.randomize_sequence(seq)
+    assert rseq[4:8] == "NNNN"
+    assert rseq != seq
 
 
 def test_speed_test():
