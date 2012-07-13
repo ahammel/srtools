@@ -3,85 +3,77 @@ import srtools
 import os
 import glob
 
-test_1read = "./test/test_1read.sam"
 
-sam_str = """\
-SRR360147.1\t77\t*\t0\t0\t*\t*\t0\t0\
-\tAGATGACGAAGAAGCTTGATCTCACGAANNNNNNNNTTNNCATCCNNNTNNTNNNNNNNNNNNNNNNNNNNNNNN\
-\tHHHHHHHHHHHHHHHHHHHHHHHHH==@###############################################\
-\tYT:Z:UP\tYF:Z:NS"""
+class ReadTestSetup(object):
+    """Does the setup for the tests of the Read classes and associated functions."""
+    sam_string = ("SRR360147.1\t77\t*\t0\t0\t*\t*\t0\t0\tAGATGACGAAGAAGCTTGATC"
+                  "TCACGAANNNNNNNNTTNNCATCCNNNTNNTNNNNNNNNNNNNNNNNNNNNNNN\tHHH"
+                  "HHHHHHHHHHHHHHHHHHHHHH==@##################################"
+                  "#############\tYT:Z:UP\tYF:Z:NS")
 
-single_read = srtools.Read(
-                qname="SRR360147.1",
-                flag=77,
-                rname='*',
-                pos=0,
-                mapq=0,
-                cigar='*',
-                rnext='*',
-                pnext=0,
-                tlen=0,
-                seq=("AGATGACGAAGAAGCTTGATCTCACGAANNNNNNNNTTNNCATCCNNNT"
-                     "NNTNNNNNNNNNNNNNNNNNNNNNNN"),
-                qual=("HHHHHHHHHHHHHHHHHHHHHHHHH==@####################"
-                      "###########################"),
-                tags=["YT:Z:UP", "YF:Z:NS"]
-        )
+    single_read = srtools.Read(
+            qname="SRR360147.1",
+            flag=77,
+            rname='*',
+            pos=0,
+            mapq=0,
+            cigar='*',
+            rnext='*',
+            pnext=0,
+            tlen=0,
+            seq=("AGATGACGAAGAAGCTTGATCTCACGAANNNNNNNNTTNNCATCCNNNT"
+                 "NNTNNNNNNNNNNNNNNNNNNNNNNN"),
+            qual=("HHHHHHHHHHHHHHHHHHHHHHHHH==@####################"
+                  "###########################"),
+            tags=["YT:Z:UP", "YF:Z:NS"]
+            )
 
-headstr = """\
-@HD\tVN:1.0\tSO:unsorted
-@SQ\tSN:1\tLN:30427671
-@SQ\tSN:2\tLN:19698289
-@SQ\tSN:3\tLN:23459830
-@SQ\tSN:4\tLN:18585056
-@SQ\tSN:5\tLN:26975502
-@SQ\tSN:Mt\tLN:366924
-@SQ\tSN:Pt\tLN:154478
-@PG\tID:bowtie2\tPN:bowtie2\tVN:2.0.0-beta5
-"""
+    head_string = ("@HD\tVN:1.0\tSO:unsorted\n"
+                   "@SQ\tSN:1\tLN:30427671\n"
+                   "@SQ\tSN:2\tLN:19698289\n"
+                   "@SQ\tSN:3\tLN:23459830\n"
+                   "@SQ\tSN:4\tLN:18585056\n"
+                   "@SQ\tSN:5\tLN:26975502\n"
+                   "@SQ\tSN:Mt\tLN:366924\n"
+                   "@SQ\tSN:Pt\tLN:154478\n"
+                   "@PG\tID:bowtie2\tPN:bowtie2\tVN:2.0.0-beta5\n")
 
-algn = srtools.Alignment(head=headstr, reads=[single_read])
+    single_read_alignment =\
+               srtools.Alignment(head=head_string, reads=[single_read])
 
-indel_algn = srtools.read_sam("./test/test_indel.sam")
-indel_algn.reads = list(indel_algn.reads)
-rc_align = srtools.read_sam("test/test_rc_consensus.sam")
+    indel_algn = srtools.read_sam("./test/test_indel.sam")
 
-class TestRead:
-    def test_read_cigar(self):
-        """Note: there should never be a need to use srtools.read_cigar like
-        this.
+    indel_algn.reads = list(indel_algn.reads)
 
-        """
-        assert srtools.read_cigar('*') == []
-        assert srtools.read_cigar('40M') == [(40, 'M')]
-        assert srtools.read_cigar('18M2D20M') == \
-                    [(18, 'M'), (2, 'D'), (20, 'M')]
+    reverse_complement_align = srtools.read_sam("test/test_rc_consensus.sam")
 
+    
+class TestReadMethods(ReadTestSetup):
+    """Tests the Read class methods."""
     def test_init(self):
-        assert single_read.qname == "SRR360147.1"
-        assert single_read.flag == 77
-        assert single_read.rname == '*'
-        assert single_read.pos == 0
-        assert single_read.mapq == 0
-        assert single_read.cigar == []
-        assert single_read.rnext == '*'
-        assert single_read.pnext == 0
-        assert single_read.tlen == 0
-        assert single_read.seq == ("AGATGACGAAGAAGCTTGATCTCACGAANNNNNNNNTTNNCA"
+        assert self.single_read.qname == "SRR360147.1"
+        assert self.single_read.flag == 77
+        assert self.single_read.rname == '*'
+        assert self.single_read.pos == 0
+        assert self.single_read.mapq == 0
+        assert self.single_read.cigar == []
+        assert self.single_read.rnext == '*'
+        assert self.single_read.pnext == 0
+        assert self.single_read.tlen == 0
+        assert self.single_read.seq == ("AGATGACGAAGAAGCTTGATCTCACGAANNNNNNNNTTNNCA"
                                    "TCCNNNTNNTNNNNNNNNNNNNNNNNNNNNNNN")
-        assert single_read.qual == ("HHHHHHHHHHHHHHHHHHHHHHHHH==@############"
+        assert self.single_read.qual == ("HHHHHHHHHHHHHHHHHHHHHHHHH==@############"
                                     "###################################")
-        assert single_read.tags == ["YT:Z:UP", "YF:Z:NS"]
-        assert single_read == single_read
+        assert self.single_read.tags == ["YT:Z:UP", "YF:Z:NS"]
 
     def test_eq(self):
-        read1, read2, read3 = indel_algn.reads
+        read1, read2, read3 = self.indel_algn.reads
         assert read1 != read2
         assert read1 != read3
         assert read2 != read3
 
     def test_str(self):
-        assert str(single_read) == sam_str
+        assert str(self.single_read) == self.sam_string
 
     def test_get_covered_range(self):
         test_reads =\
@@ -90,6 +82,48 @@ class TestRead:
         assert test_reads[1].get_covered_range() == (3, 7)
         assert test_reads[2].get_covered_range() == (13, 17)
         assert test_reads[3].get_covered_range() == (14, 18)
+
+
+class TestReadFunctions(ReadTestSetup):
+    """Tests of the functions associated with the Read class."""
+
+    def test_read_cigar(self):
+        assert srtools.read_cigar('*') == []
+        assert srtools.read_cigar('40M') == [(40, 'M')]
+        assert srtools.read_cigar('18M2D20M') == \
+                    [(18, 'M'), (2, 'D'), (20, 'M')]
+
+    def test_parse_sam_read(self):
+        test_read = srtools.parse_sam_read(self.sam_string)
+        assert test_read == self.single_read
+
+    def test_read_sam(self):
+        test_algn = srtools.read_sam("./test/test_1read.sam")
+        assert test_algn.head == self.single_read_alignment.head
+        for test_read in test_algn.reads:
+            assert test_read == self.single_read 
+
+    def test_consensus(self):
+        with pytest.raises(srtools.UnmappedReadError):
+            srtools.consensus([self.single_read])
+        assert srtools.consensus(self.indel_algn.reads) ==\
+             "AGATGACGGAAGCTTGATCTCACGAANNNNNNNNTTNNCATCCNNNTNNT"
+
+        assert srtools.consensus(self.reverse_complement_align.reads) == \
+                                                                "AAAGGGAAAA"
+
+    def test_dot_indels(self):
+        assert list(srtools.dot_indels(self.indel_algn.reads)) == \
+            [("AGATGACG..GAAGCTTGATCTCACGAA..NNNNNNNNTTNNCATCCNNNTNNT",
+              [(8, 'M'), (2, 'D'), (65, 'M')],
+              1),
+             ("AGATGACGAAGAAGCTTGATCTCACGAA..NNNNNNNNTTNNCATCCNNNTNNA",
+              [(77, 'M')],
+              1),
+             ("AGATGACG..GAAGCTTGATCTCACGAATTNNNNNNNNTTNNCATCCNNNTNNT",
+              [(8, 'M'), (2, 'D'), (18, 'M'), (2, 'I'), (24, 'M')],
+              1)]
+
 
 class TestAlignment:
     def test_str(self):
@@ -142,18 +176,6 @@ def test_reverse_complement():
     assert srtools.reverse_complement("N") == "N"
     assert srtools.reverse_complement("ACGT") == "ACGT"
     assert srtools.reverse_complement("GCCAT") == "ATGGC"
-
-
-def test_parse_sam_read():
-    test_read = srtools.parse_sam_read(sam_str)
-    assert test_read == single_read
-
-
-def test_read_sam():
-    test_algn = srtools.read_sam(test_1read)
-    assert test_algn.head == algn.head
-    for test_read in test_algn.reads:
-        assert single_read == test_read
 
 
 def test_read_fasta():
@@ -209,28 +231,6 @@ def test_make_dot_queue():
                  ("CAATTA", [(1, "I"), (4, "M")], 2)]
     assert srtools.make_dot_queue(hard_read, hard_list) == \
             [(3, 2), (1, 1)]
-
-
-def test_dot_indels():
-    assert list(srtools.dot_indels(indel_algn.reads)) == \
-        [("AGATGACG..GAAGCTTGATCTCACGAA..NNNNNNNNTTNNCATCCNNNTNNT",
-          [(8, 'M'), (2, 'D'), (65, 'M')],
-          1),
-         ("AGATGACGAAGAAGCTTGATCTCACGAA..NNNNNNNNTTNNCATCCNNNTNNA",
-          [(77, 'M')],
-          1),
-         ("AGATGACG..GAAGCTTGATCTCACGAATTNNNNNNNNTTNNCATCCNNNTNNT",
-          [(8, 'M'), (2, 'D'), (18, 'M'), (2, 'I'), (24, 'M')],
-          1)]
-
-
-def test_consensus():
-    with pytest.raises(srtools.UnmappedReadError):
-        srtools.consensus([single_read])
-    assert srtools.consensus(indel_algn.reads) ==\
-         "AGATGACGGAAGCTTGATCTCACGAANNNNNNNNTTNNCATCCNNNTNNT"
-
-    assert srtools.consensus(rc_align.reads) == "AAAGGGAAAA"
 
 
 def test_overlaps():
@@ -320,21 +320,6 @@ class TestORFFunctions():
         assert srtools.open_reading_frames(self.reads["read1"]) == []
         assert srtools.open_reading_frames(self.reads["read2"]) == \
             ["ATGAATGAA", "ATGAAA", "ATGAATAAAAAAAAA"]
-
-def test_random_sequence():
-    seq = srtools.random_sequence(10)
-    assert len(seq) == 10
-    for letter in seq:
-        assert letter in "ACGT"
-    print(seq)
-
-
-def test_randomize_sequence():
-    seq = "AACGNNNNAACG"
-    rseq = srtools.randomize_sequence(seq)
-    assert rseq[4:8] == "NNNN"
-    assert rseq != seq
-
 
 def test_summary_statistics():
     srtools.print_summary_statistics("test/speed_test.sam",
