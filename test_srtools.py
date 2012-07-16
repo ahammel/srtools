@@ -354,8 +354,6 @@ def test_summary_statistics():
     os.remove("test_summary.txt")
 
 
-
-
 def test_speed_test():
    align = srtools.read_sam("test/speed_test.sam")
    annotation = srtools.read_gff("test/speed_test.gff")
