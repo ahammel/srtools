@@ -1,4 +1,5 @@
 import pytest
+import srstats
 import srtools
 import os
 import glob
@@ -339,7 +340,7 @@ class TestORFFunctions():
 
 
 def test_summary_statistics():
-    srtools.print_summary_statistics("test/speed_test.sam",
+    srstats.print_summary_statistics("test/speed_test.sam",
                                      output_file="test_summary.txt")
     test_file = open("test_summary.txt")
     known_file = open("test/david_summary.txt")
