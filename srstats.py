@@ -55,7 +55,10 @@ def print_summary_statistics(input_file, output_file=sys.stdout):
     alignment = srtools.read_sam(input_file)
     stats = summary_statistics(alignment.reads)
 
-    f = open(output_file, "w")
+    if not output_file == sys.stdout:
+        f = open(output_file, "w")
+    else:
+        f = output_file
 
     #Header
     head_string = "".join([cyan("Summary of Sam File "),
@@ -104,4 +107,5 @@ def print_summary_statistics(input_file, output_file=sys.stdout):
     print(stats["read_count"], file=f)
     print("", file=f)
 
-    f.close()
+    if not output_file == sys.stdout:
+        f.close()
