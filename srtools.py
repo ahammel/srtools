@@ -205,10 +205,11 @@ def lazy_sam_generator(samfile):
         for line in f:
             if line.startswith('@'):
                 headlines.append(line)
+            elif headlines:
+                yield "".join(headlines)
+                headlines = False
+                yield parse_sam_read(line)
             else:
-                if headlines:
-                    yield "".join(headlines)
-                    headlines = False
                 yield parse_sam_read(line)
 
 
