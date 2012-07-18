@@ -102,7 +102,7 @@ class TestReadFunctions(ReadTestSetup):
     def test_read_sam(self):
         test_algn = srtools.read_sam("./test/test_1read.sam")
         assert test_algn.head == self.single_read_alignment.head
-        for test_read in test_algn.reads:
+        for test_read in test_algn:
             assert test_read == self.single_read 
 
     def test_consensus(self):
@@ -255,6 +255,11 @@ class TestAlignmentMethods(AlignmentTestSetup):
             test_algn = srtools.read_sam(test_file)
             assert str(test_algn) == str(srtools.read_sam("tmp.sam"))
         os.remove("tmp.sam")
+
+    def test_iter(self):
+        self.expressed_locus_alignment.reads.rewind()
+        for read in self.expressed_locus_alignment:
+            assert isinstance(read, srtools.Read)
 
     def test_filter_reads(self):
         self.expressed_locus_alignment.reads.rewind()

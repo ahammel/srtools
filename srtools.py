@@ -104,7 +104,6 @@ class ReadStream(object):
         self.stream = self.read_generator()
 
 
-
 class Alignment():
     """A sam-format sequence alignment"""
     def __init__(self, head, reads):
