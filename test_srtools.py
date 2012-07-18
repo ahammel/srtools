@@ -48,8 +48,7 @@ class ReadTestSetup(object):
 
     reverse_complement_align = srtools.read_sam("test/test_rc_consensus.sam")
 
-    def expressed_locus_alignment(self):
-        return srtools.read_sam("test/test_expressed_locus.sam")
+    expressed_locus_alignment = srtools.read_sam("test/test_expressed_locus.sam")
 
     
 class TestReadMethods(ReadTestSetup):
@@ -80,7 +79,7 @@ class TestReadMethods(ReadTestSetup):
         assert str(self.single_read) == self.sam_string
 
     def test_get_covered_range(self):
-        test_reads = list(self.expressed_locus_alignment().reads) 
+        test_reads = list(self.expressed_locus_alignment.reads) 
         assert test_reads[0].get_covered_range() == (1, 5)
         assert test_reads[1].get_covered_range() == (3, 7)
         assert test_reads[2].get_covered_range() == (13, 17)
@@ -136,7 +135,8 @@ class TestReadFunctions(ReadTestSetup):
         assert srtools.overlaps(read2, read4)
         assert srtools.overlaps(read3, read4)
 
-        read1, read2, read3, read4 = self.expressed_locus_alignment().reads
+        self.expressed_locus_alignment.reads.rewind()
+        read1, read2, read3, read4 = self.expressed_locus_alignment.reads
         assert srtools.overlaps(read1, read2)
         assert not srtools.overlaps(read1, read3)
         assert not srtools.overlaps(read1, read4)
@@ -145,7 +145,8 @@ class TestReadFunctions(ReadTestSetup):
         assert srtools.overlaps(read3, read4)
 
     def test_coverage(self):
-        test_reads = list(self.expressed_locus_alignment().reads)
+        self.expressed_locus_alignment.reads.rewind()
+        test_reads = list(self.expressed_locus_alignment.reads)
         assert srtools.coverage(test_reads[:1]) == (1,5)
         assert srtools.coverage(test_reads[:2]) == (1,7)
         assert srtools.coverage(test_reads[:3]) == (1,17)
@@ -154,7 +155,8 @@ class TestReadFunctions(ReadTestSetup):
         assert srtools.coverage(test_reads[1:]) == (3,18)
 
     def test_in_features(self):
-        alignment = self.expressed_locus_alignment()
+        self.expressed_locus_alignment.reads.rewind()
+        alignment = self.expressed_locus_alignment
         annotation = srtools.read_gff("test/test.gff")
         genes = annotation.filter_features(lambda x: x.f_type == "gene")
         locus_gen = srtools.expressed_loci(alignment.reads)
@@ -255,13 +257,15 @@ class TestAlignmentMethods(AlignmentTestSetup):
         os.remove("tmp.sam")
 
     def test_filter_reads(self):
-        test_reads = self.expressed_locus_alignment()
+        self.expressed_locus_alignment.reads.rewind()
+        test_reads = self.expressed_locus_alignment
         filtered_reads = test_reads.filter_reads(lambda x: 2 <= x.pos <= 15)
         assert next(filtered_reads).qname == "SRR360147.3"
         assert next(filtered_reads).qname == "SRR360147.2"
 
     def test_collect_reads(self):
-        test_reads = self.expressed_locus_alignment()
+        self.expressed_locus_alignment.reads.rewind()
+        test_reads = self.expressed_locus_alignment
         collected_reads = test_reads.collect_reads(lambda x: x.pos < 5)
         first_batch = next(collected_reads)
         second_batch = next(collected_reads)
@@ -275,7 +279,8 @@ class TestAlignmentMethods(AlignmentTestSetup):
         assert second_batch_1.qname == "SRR360147.4"
 
     def test_expressed_loci(self):
-        alignment = self.expressed_locus_alignment()
+        self.expressed_locus_alignment.reads.rewind()
+        alignment = self.expressed_locus_alignment
         locus_gen = srtools.expressed_loci(alignment.reads)
         group1 = next(locus_gen)
         group2 = next(locus_gen)

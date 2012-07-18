@@ -78,6 +78,33 @@ class Read():
         return (first_base, last_base)
 
 
+class ReadStream(object):
+    """A stream of reads from a sam file."""
+    def __init__(self, sam_file):
+        self.sam_file = sam_file
+        self.stream = self.read_generator()
+
+    def read_generator(self):
+        with open(self.sam_file) as f:
+            for line in f:
+                if line and not line.startswith("@"):
+                    yield parse_sam_read(line)
+
+    def __next__(self):
+        return next(self.stream)
+
+    def __iter__(self):
+        return self
+
+    def rewind(self):
+        """Calls the read_generator method, thereby reseting the stream of
+        reads.
+
+        """
+        self.stream = self.read_generator()
+
+
+
 class Alignment():
     """A sam-format sequence alignment"""
     def __init__(self, head, reads):
@@ -88,6 +115,12 @@ class Alignment():
         headstr = self.head
         readstr = "\n".join([str(read) for read in self.reads])
         return headstr + readstr
+
+    def __iter__(self):
+        return self.reads
+
+    def __next__(self):
+        return next(self.reads)
 
     def filter_reads(self, function):
         """Returns a generator of reads where function(read) returns a truthy 
@@ -198,19 +231,16 @@ def parse_sam_read(string):
                 fields[10], tags=fields[11:])
 
 
-def lazy_sam_generator(samfile):
+def get_head(samfile):
+    """Returns the head of a sam_file"""
     headlines = []
     with open(samfile) as f:
         for line in f:
-            if line.startswith('@'):
+            if line and line.startswith("@"):
                 headlines.append(line)
-            elif headlines:
-                yield "".join(headlines)
-                headlines = False
-                yield parse_sam_read(line)
             else:
-                yield parse_sam_read(line)
-
+                return "".join(headlines)
+    
 
 def read_sam(samfile):
     """Creates an Alignment object from a correctly formatted SAM file.
@@ -221,9 +251,9 @@ def read_sam(samfile):
     is no backtracking. Once you've read a read, it gets garbage collected.
 
     """
-    lines = lazy_sam_generator(samfile)
-    head = next(lines)
-    return Alignment(head=head, reads=lines)
+    head = get_head(samfile)
+    reads = ReadStream(samfile)
+    return Alignment(head=head, reads=reads)
 
 
 def read_fasta(fasta_file):
