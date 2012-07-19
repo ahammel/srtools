@@ -52,8 +52,8 @@ def print_summary_statistics(input_file, output_file=sys.stdout):
     output file, or to stdout if not output_file is selected.
 
     """
-    alignment = srtools.read_sam(input_file)
-    stats = summary_statistics(alignment.reads)
+    alignment = srtools.SamAlignment(input_file)
+    stats = summary_statistics(alignment)
 
     if not output_file == sys.stdout:
         f = open(output_file, "w")

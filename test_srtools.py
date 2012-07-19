@@ -39,16 +39,21 @@ class ReadTestSetup(object):
                    "@SQ\tSN:Pt\tLN:154478\n"
                    "@PG\tID:bowtie2\tPN:bowtie2\tVN:2.0.0-beta5\n")
 
-    single_read_alignment =\
-               srtools.Alignment(head=head_string, reads=[single_read])
+    def test_make_single_read(self):
+        with open("single_read_test.sam", "w") as f:
+            print(self.head_string, end="", file=f)
+            print(self.sam_string, file=f)
+            assert True
 
-    indel_algn = srtools.read_sam("./test/test_indel.sam")
+    single_read_alignment = srtools.SamAlignment("single_read_test.sam") 
 
-    indel_algn.reads = list(indel_algn.reads)
+    indel_algn = srtools.SamAlignment("./test/test_indel.sam")
 
-    reverse_complement_align = srtools.read_sam("test/test_rc_consensus.sam")
+    #indel_algn.reads = list(indel_algn.reads)
 
-    expressed_locus_alignment = srtools.read_sam("test/test_expressed_locus.sam")
+    reverse_complement_align = srtools.SamAlignment("test/test_rc_consensus.sam")
+
+    expressed_locus_alignment = srtools.SamAlignment("test/test_expressed_locus.sam")
 
     
 class TestReadMethods(ReadTestSetup):
@@ -70,7 +75,7 @@ class TestReadMethods(ReadTestSetup):
         assert self.single_read.tags == ["YT:Z:UP", "YF:Z:NS"]
 
     def test_eq(self):
-        read1, read2, read3 = self.indel_algn.reads
+        read1, read2, read3 = list(self.indel_algn)
         assert read1 != read2
         assert read1 != read3
         assert read2 != read3
@@ -79,7 +84,7 @@ class TestReadMethods(ReadTestSetup):
         assert str(self.single_read) == self.sam_string
 
     def test_get_covered_range(self):
-        test_reads = list(self.expressed_locus_alignment.reads) 
+        test_reads = list(self.expressed_locus_alignment) 
         assert test_reads[0].get_covered_range() == (1, 5)
         assert test_reads[1].get_covered_range() == (3, 7)
         assert test_reads[2].get_covered_range() == (13, 17)
@@ -99,23 +104,19 @@ class TestReadFunctions(ReadTestSetup):
         test_read = srtools.parse_sam_read(self.sam_string)
         assert test_read == self.single_read
 
-    def test_read_sam(self):
-        test_algn = srtools.read_sam("./test/test_1read.sam")
-        assert test_algn.head == self.single_read_alignment.head
-        for test_read in test_algn:
-            assert test_read == self.single_read 
-
     def test_consensus(self):
+        self.indel_algn.rewind()
         with pytest.raises(srtools.UnmappedReadError):
             srtools.consensus([self.single_read])
-        assert srtools.consensus(self.indel_algn.reads) ==\
+        assert srtools.consensus(list(self.indel_algn)) ==\
              "AGATGACGGAAGCTTGATCTCACGAANNNNNNNNTTNNCATCCNNNTNNT"
 
-        assert srtools.consensus(self.reverse_complement_align.reads) == \
+        assert srtools.consensus(self.reverse_complement_align) == \
                                                                 "AAAGGGAAAA"
 
     def test_dot_indels(self):
-        assert list(srtools.dot_indels(self.indel_algn.reads)) == \
+        self.indel_algn.rewind()
+        assert list(srtools.dot_indels(self.indel_algn)) == \
             [("AGATGACG..GAAGCTTGATCTCACGAA..NNNNNNNNTTNNCATCCNNNTNNT",
               [(8, 'M'), (2, 'D'), (65, 'M')],
               1),
@@ -127,7 +128,7 @@ class TestReadFunctions(ReadTestSetup):
               1)]
 
     def test_overlaps(self):
-        read1, read2, read3, read4 = srtools.read_sam("test/test_overlap.sam").reads
+        read1, read2, read3, read4 = list(srtools.SamAlignment("test/test_overlap.sam"))
         assert not srtools.overlaps(read1, read2)
         assert srtools.overlaps(read1, read3)
         assert not srtools.overlaps(read1, read4)
@@ -135,8 +136,8 @@ class TestReadFunctions(ReadTestSetup):
         assert srtools.overlaps(read2, read4)
         assert srtools.overlaps(read3, read4)
 
-        self.expressed_locus_alignment.reads.rewind()
-        read1, read2, read3, read4 = self.expressed_locus_alignment.reads
+        self.expressed_locus_alignment.rewind()
+        read1, read2, read3, read4 = list(self.expressed_locus_alignment)
         assert srtools.overlaps(read1, read2)
         assert not srtools.overlaps(read1, read3)
         assert not srtools.overlaps(read1, read4)
@@ -145,8 +146,8 @@ class TestReadFunctions(ReadTestSetup):
         assert srtools.overlaps(read3, read4)
 
     def test_coverage(self):
-        self.expressed_locus_alignment.reads.rewind()
-        test_reads = list(self.expressed_locus_alignment.reads)
+        self.expressed_locus_alignment.rewind()
+        test_reads = list(self.expressed_locus_alignment)
         assert srtools.coverage(test_reads[:1]) == (1,5)
         assert srtools.coverage(test_reads[:2]) == (1,7)
         assert srtools.coverage(test_reads[:3]) == (1,17)
@@ -155,11 +156,11 @@ class TestReadFunctions(ReadTestSetup):
         assert srtools.coverage(test_reads[1:]) == (3,18)
 
     def test_in_features(self):
-        self.expressed_locus_alignment.reads.rewind()
+        self.expressed_locus_alignment.rewind()
         alignment = self.expressed_locus_alignment
         annotation = srtools.read_gff("test/test.gff")
         genes = annotation.filter_features(lambda x: x.f_type == "gene")
-        locus_gen = srtools.expressed_loci(alignment.reads)
+        locus_gen = srtools.expressed_loci(alignment)
         group1 = next(locus_gen)
         group2 = next(locus_gen)
         assert not srtools.in_features(group1, genes)
@@ -249,27 +250,27 @@ class AlignmentTestSetup(ReadTestSetup):
 class TestAlignmentMethods(AlignmentTestSetup):
     def test_str(self):
         for test_file in glob.glob("test/*.sam"):
-            test_algn = srtools.read_sam(test_file)
+            test_algn = srtools.SamAlignment(test_file)
             with open("tmp.sam", "w") as f:
                 print(test_algn, file=f)
-            test_algn = srtools.read_sam(test_file)
-            assert str(test_algn) == str(srtools.read_sam("tmp.sam"))
+            test_algn = srtools.SamAlignment(test_file)
+            assert str(test_algn) == str(srtools.SamAlignment("tmp.sam"))
         os.remove("tmp.sam")
 
     def test_iter(self):
-        self.expressed_locus_alignment.reads.rewind()
+        self.expressed_locus_alignment.rewind()
         for read in self.expressed_locus_alignment:
             assert isinstance(read, srtools.Read)
 
     def test_filter_reads(self):
-        self.expressed_locus_alignment.reads.rewind()
+        self.expressed_locus_alignment.rewind()
         test_reads = self.expressed_locus_alignment
         filtered_reads = test_reads.filter_reads(lambda x: 2 <= x.pos <= 15)
         assert next(filtered_reads).qname == "SRR360147.3"
         assert next(filtered_reads).qname == "SRR360147.2"
 
     def test_collect_reads(self):
-        self.expressed_locus_alignment.reads.rewind()
+        self.expressed_locus_alignment.rewind()
         test_reads = self.expressed_locus_alignment
         collected_reads = test_reads.collect_reads(lambda x: x.pos < 5)
         first_batch = next(collected_reads)
@@ -284,9 +285,9 @@ class TestAlignmentMethods(AlignmentTestSetup):
         assert second_batch_1.qname == "SRR360147.4"
 
     def test_expressed_loci(self):
-        self.expressed_locus_alignment.reads.rewind()
+        self.expressed_locus_alignment.rewind()
         alignment = self.expressed_locus_alignment
-        locus_gen = srtools.expressed_loci(alignment.reads)
+        locus_gen = srtools.expressed_loci(alignment)
         group1 = next(locus_gen)
         group2 = next(locus_gen)
         assert group1[0].qname == "SRR360147.1"
@@ -371,3 +372,6 @@ def test_speed_test():
    for locus in srtools.expressed_loci(align.reads):
         srtools.in_features(locus, annotation.features)
         srtools.consensus(locus)
+
+def test_tear_down():
+    os.remove("single_read_test.sam")

@@ -25,7 +25,7 @@ class NullSequenceError(ValueError):
     pass
 
 
-class Read():
+class Read(object):
     """A sam-format sequence read."""
 
     def __init__(self, qname, flag, rname, pos, mapq, cigar, rnext, pnext,
@@ -78,55 +78,14 @@ class Read():
         return (first_base, last_base)
 
 
-class ReadStream(object):
-    """A stream of reads from a sam file."""
-    def __init__(self, sam_file):
-        self.sam_file = sam_file
-        self.stream = self.read_generator()
-
-    def read_generator(self):
-        with open(self.sam_file) as f:
-            for line in f:
-                if line and not line.startswith("@"):
-                    yield parse_sam_read(line)
-
-    def __next__(self):
-        return next(self.stream)
-
-    def __iter__(self):
-        return self
-
-    def rewind(self):
-        """Calls the read_generator method, thereby reseting the stream of
-        reads.
-
-        """
-        self.stream = self.read_generator()
-
-
-class Alignment():
+class Alignment(object):
     """A sam-format sequence alignment"""
-    def __init__(self, head, reads):
-        self.head = head
-        self.reads = reads
-
-    def __str__(self):
-        headstr = self.head
-        readstr = "\n".join([str(read) for read in self.reads])
-        return headstr + readstr
-
-    def __iter__(self):
-        return self.reads
-
-    def __next__(self):
-        return next(self.reads)
-
     def filter_reads(self, function):
         """Returns a generator of reads where function(read) returns a truthy 
         value.
 
         """
-        for r in self.reads:
+        for r in self:
             if function(r):
                 yield r
 
@@ -135,11 +94,11 @@ class Alignment():
         returns a truthy value. Helper method fo Alignment.collect_reads.
 
         """
-        reads = self.reads
+        reads = iter(self)
         first_read = next(reads)
         test_value = function(first_read)
         yield first_read
-        for read in self.reads:
+        for read in self:
             if function(read) == test_value:
                 yield read
 
@@ -152,7 +111,50 @@ class Alignment():
             yield self.filter_consecutive_reads(function)
 
 
-class Feature():
+class SamAlignment(Alignment):
+    """A stream of reads from a sam file."""
+    def __init__(self, sam_file):
+        self.sam_file = sam_file
+        self.stream = self.read_generator()
+
+    def __next__(self):
+        return next(self.stream)
+
+    def __iter__(self):
+        return self
+
+    def __str__(self):
+        headstr = self.head()
+        readlines = []
+        for read in self:
+            readlines.append(str(read))
+        return headstr + "\n".join(readlines)
+
+    def head(self):
+        headlines = []
+        with open(self.sam_file) as f:
+            for line in f:
+                if line and line.startswith("@"):
+                    headlines.append(line)
+                else:
+                    break
+        return "".join(headlines)
+
+    def read_generator(self):
+        with open(self.sam_file) as f:
+            for line in f:
+                if line and not line.startswith("@"):
+                    yield parse_sam_read(line)
+
+    def rewind(self):
+        """Calls the read_generator method, thereby reseting the stream of
+        reads.
+
+        """
+        self.stream = self.read_generator()
+
+
+class Feature(object):
     """A GFF genomic feature."""
     def __init__(self, sequence, source, f_type, start, end, score,
                  strand, frame, attribute):
@@ -167,7 +169,7 @@ class Feature():
         self.attribute = attribute
 
 
-class GenomeAnnotation():
+class GenomeAnnotation(object):
     """A genome-spanning collection of Features"""
     def __init__(self, head, features):
         self.head = head
@@ -240,20 +242,6 @@ def get_head(samfile):
             else:
                 return "".join(headlines)
     
-
-def read_sam(samfile):
-    """Creates an Alignment object from a correctly formatted SAM file.
-    
-    Note: the Alignment.reads object is a generator expression. This (hopefully)
-    reduces space complexity to the point where it's possible to actually read
-    a real SAM file (which can easily be 50 Gb) in reasonable memory, but there
-    is no backtracking. Once you've read a read, it gets garbage collected.
-
-    """
-    head = get_head(samfile)
-    reads = ReadStream(samfile)
-    return Alignment(head=head, reads=reads)
-
 
 def read_fasta(fasta_file):
     """Returns a dictionary a sequence names and values from a fasta-format file."""
