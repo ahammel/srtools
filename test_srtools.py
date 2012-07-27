@@ -49,9 +49,9 @@ class ReadTestSetup(object):
 
     indel_algn = srtools.SamAlignment("./test/test_indel.sam")
 
-    #indel_algn.reads = list(indel_algn.reads)
-
     reverse_complement_align = srtools.SamAlignment("test/test_rc_consensus.sam")
+    
+    reverse_complement_align_copy = srtools.SamAlignment("test/test_rc_consensus.sam")
 
     expressed_locus_alignment = srtools.SamAlignment("test/test_expressed_locus.sam")
 
@@ -262,6 +262,11 @@ class TestAlignmentMethods(AlignmentTestSetup):
         for read in self.expressed_locus_alignment:
             assert isinstance(read, srtools.Read)
 
+    def test_eq(self):
+        self.reverse_complement_align.rewind()
+        assert self.reverse_complement_align == \
+               self.reverse_complement_align_copy
+
     def test_filter_reads(self):
         self.expressed_locus_alignment.rewind()
         test_reads = self.expressed_locus_alignment
@@ -367,9 +372,9 @@ def test_summary_statistics():
 
 
 def test_speed_test():
-   align = srtools.read_sam("test/speed_test.sam")
+   align = srtools.SamAlignment("test/speed_test.sam")
    annotation = srtools.read_gff("test/speed_test.gff")
-   for locus in srtools.expressed_loci(align.reads):
+   for locus in srtools.expressed_loci(align):
         srtools.in_features(locus, annotation.features)
         srtools.consensus(locus)
 

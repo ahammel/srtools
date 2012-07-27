@@ -80,6 +80,53 @@ class Read(object):
 
 class Alignment(object):
     """A sam-format sequence alignment"""
+    def __init__(self, data_file):
+        self.data_file = data_file
+        self.stream = self.read_generator()
+
+    def __next__(self):
+        return next(self.stream)
+
+    def __iter__(self):
+        return self
+
+    def __eq__(self, other):
+        """Ok, I admit it: this equality method is horrible. Outside of unit
+        testing, however, you shouldn't really be testing for equality between
+        alignments, so deal with it.
+
+        """
+        try:                             #If the other thing doesn't have 
+            self.rewind()                #these attributes, it isn't an 
+            other.rewind()               #Alignment
+            self_head = self.head()
+            other_head = other.head()
+        except AttributeError:
+            return False                #Yeah, i'm mixing mid-flow returns with
+                                        #truth flags. Like I said: deal with it
+        v = False
+
+        #This block flips the flag to True iff the two Alignments have the 
+        #same reads in the same order.
+        for read in self:
+            try:
+                reads_equal = read == next(other)
+            except StopIteration:
+                break
+            if not reads_equal:
+                break
+        else:
+            try:
+                next(other)
+            except StopIteration:
+                v = True
+
+        return v and self_head == other_head
+
+
+    def __ne__(self, other):
+        return not self == other
+
     def filter_reads(self, function):
         """Returns a generator of reads where function(read) returns a truthy 
         value.
@@ -91,7 +138,7 @@ class Alignment(object):
 
     def filter_consecutive_reads(self, function):
         """Returns a generator of consecutive reads where function(read)
-        returns a truthy value. Helper method fo Alignment.collect_reads.
+        returns a truthy value. Helper method to Alignment.collect_reads.
 
         """
         reads = iter(self)
@@ -110,19 +157,16 @@ class Alignment(object):
         while True:
             yield self.filter_consecutive_reads(function)
 
+    def rewind(self):
+        """Calls the read_generator method, thereby reseting the stream of
+        reads.
+
+        """
+        self.stream = self.read_generator()
+
 
 class SamAlignment(Alignment):
     """A stream of reads from a sam file."""
-    def __init__(self, sam_file):
-        self.sam_file = sam_file
-        self.stream = self.read_generator()
-
-    def __next__(self):
-        return next(self.stream)
-
-    def __iter__(self):
-        return self
-
     def __str__(self):
         headstr = self.head()
         readlines = []
@@ -132,7 +176,7 @@ class SamAlignment(Alignment):
 
     def head(self):
         headlines = []
-        with open(self.sam_file) as f:
+        with open(self.data_file) as f:
             for line in f:
                 if line and line.startswith("@"):
                     headlines.append(line)
@@ -141,17 +185,11 @@ class SamAlignment(Alignment):
         return "".join(headlines)
 
     def read_generator(self):
-        with open(self.sam_file) as f:
+        with open(self.data_file) as f:
             for line in f:
                 if line and not line.startswith("@"):
                     yield parse_sam_read(line)
 
-    def rewind(self):
-        """Calls the read_generator method, thereby reseting the stream of
-        reads.
-
-        """
-        self.stream = self.read_generator()
 
 
 class Feature(object):
