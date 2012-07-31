@@ -262,11 +262,6 @@ class TestAlignmentMethods(AlignmentTestSetup):
         for read in self.expressed_locus_alignment:
             assert isinstance(read, srtools.Read)
 
-    def test_eq(self):
-        self.reverse_complement_align.rewind()
-        assert self.reverse_complement_align == \
-               self.reverse_complement_align_copy
-
     def test_filter_reads(self):
         self.expressed_locus_alignment.rewind()
         test_reads = self.expressed_locus_alignment

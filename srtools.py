@@ -77,43 +77,6 @@ class Alignment(object):
     def __iter__(self):
         return self
 
-    def __eq__(self, other):
-        """Ok, I admit it: this equality method is horrible. Outside of unit
-        testing, however, you shouldn't really be testing for equality between
-        alignments, so deal with it.
-
-        """
-        try:                             #If the other thing doesn't have 
-            self.rewind()                #these attributes, it isn't an 
-            other.rewind()               #Alignment
-            self_head = self.head()
-            other_head = other.head()
-        except AttributeError:
-            return False                #Yeah, i'm mixing mid-flow returns with
-                                        #truth flags. Like I said: deal with it
-        v = False
-
-        #This block flips the flag to True iff the two Alignments have the 
-        #same reads in the same order.
-        for read in self:
-            try:
-                reads_equal = read == next(other)
-            except StopIteration:
-                break
-            if not reads_equal:
-                break
-        else:
-            try:
-                next(other)
-            except StopIteration:
-                v = True
-
-        return v and self_head == other_head
-
-
-    def __ne__(self, other):
-        return not self == other
-
     def filter_reads(self, function):
         """Returns a generator of reads where function(read) returns a truthy 
         value.
