@@ -6,8 +6,21 @@ class PostgresAlignment(srtools.Alignment):
     def read_generator(self):
         with postgresql.open(self.data_file) as db:
             command = "SELECT * FROM reads ORDER BY id;"
-            rows = iter(db.prepare(command))
-            yield parse_postgres_read(next(rows))
+            rows = db.prepare(command)
+            for row in rows:
+                yield parse_postgres_read(row)
+
+
+def parse_postgres_read(row):
+    """Returns a read object from a postgres read database row."""
+    qname, flag, rname, pos, mapq,\
+    cigar, rnext, pnext, tlen, seq, qual = row[1:12]
+
+    tags = row[-1].split()
+
+    return srtools.Read(qname, flag, rname, pos, mapq, cigar, rnext, pnext,\
+                        tlen, seq, qual, tags)
+
 
 
 def sql_insert_command(read, table_name, id_number):
@@ -27,7 +40,7 @@ def sql_insert_command(read, table_name, id_number):
               ("pnext", read.pnext),
               ("tlen", read.tlen),
               ("seq", read.seq),
-              ("tags", read.tags)]
+              ("qual", read.qual)]
 
     field_list = []
     value_list = [] 
@@ -37,6 +50,9 @@ def sql_insert_command(read, table_name, id_number):
             value_list.append(str(v))
         else:
             value_list.append("'" + str(v) + "'")
+
+    field_list.append("tags")
+    value_list.append("'" + " ".join([str(x) for x in read.tags]) + "'")
 
     command = "INSERT INTO "
     command += table_name
@@ -53,7 +69,7 @@ def sql_insert_command(read, table_name, id_number):
 def postgres_dump(alignment, pq_locator):
     """Dumps an alignment of SAM reads into a Postgres database"""
     with postgresql.open(pq_locator) as db:
-        db.execute("DROP TABLE reads;")
+        db.execute("DROP TABLE IF EXISTS reads;")
         db.execute("CREATE TABLE reads ( "
                    "id          int, "
                    "qname       varchar(80), "

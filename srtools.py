@@ -44,20 +44,7 @@ class Read(object):
         self.tags = [str(x) for x in tags]
 
     def __eq__(self, other):
-        tests = [self.qname == other.qname,
-                 self.flag == other.flag,
-                 self.rname == other.rname,
-                 self.pos == other.pos,
-                 self.mapq == other.mapq,
-                 self.cigar == other.cigar,
-                 self.rnext == other.rnext,
-                 self.pnext == other.pnext,
-                 self.tlen == other.tlen,
-                 self.seq == other.seq,
-                 self.qual == other.qual,
-                 self.tags == other.tags]
-
-        return all(result == True for result in tests)
+        return str(self) == str(other)
 
     def __ne__(self, other):
         return not self == other
