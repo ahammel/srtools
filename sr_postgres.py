@@ -3,12 +3,22 @@ import postgresql
 
 
 class PostgresAlignment(srtools.Alignment):
+    """An illumina alignment using data stored as a postgres database. The data
+    file is a pg locator for the db.
+    
+    """
     def read_generator(self):
         with postgresql.open(self.data_file) as db:
             command = "SELECT * FROM reads ORDER BY id;"
             rows = db.prepare(command)
             for row in rows:
                 yield parse_postgres_read(row)
+
+    def head(self):
+        with postgresql.open(self.data_file) as db:
+            head_tuple = next(iter(db.prepare("SELECT * FROM head;")))
+            return head_tuple[0]
+        
 
 
 def parse_postgres_read(row):
@@ -91,3 +101,11 @@ def postgres_dump(alignment, pq_locator):
             command = sql_insert_command(read, "reads", id_number)
             db.execute(command)
             id_number += 1
+
+        db.execute("DROP TABLE IF EXISTS head;"
+                   "CREATE TABLE head (head  text);")
+
+        head_command = "INSERT INTO head (head) VALUES ('"
+        head_command += alignment.head()
+        head_command += "');"
+        db.execute(head_command)
