@@ -35,7 +35,7 @@ class Read(object):
         self.rname = str(rname)
         self.pos = int(pos)
         self.mapq = int(mapq)
-        self.cigar = read_cigar(cigar)
+        self.cigar = Cigar(cigar)
         self.rnext = str(rnext)
         self.pnext = int(pnext)
         self.tlen = int(tlen)
@@ -51,7 +51,7 @@ class Read(object):
 
     def __str__(self):
         attrs = [self.qname, self.flag, self.rname, self.pos, self.mapq,
-                 print_cigar(self.cigar), self.rnext, self.pnext,
+                 str(self.cigar), self.rnext, self.pnext,
                  self.tlen, self.seq, self.qual] + self.tags
         return "\t".join([str(x) for x in attrs])
 
@@ -63,6 +63,50 @@ class Read(object):
         first_base = self.pos
         last_base = self.pos + sum([i for i, o in self.cigar if o == "M"]) - 1
         return (first_base, last_base)
+
+#def read_cigar(cigar):
+    #"""Takes a cigar string, and returns a list of 2-tuples consisting
+    #of the index (int) and the operation (one-character str).
+
+    #"""
+    #return [(int(a), b) for (a, b) in re.findall(r'(\d+)(\D)', cigar)]
+
+#def print_cigar(cigar):
+    #"""Prints a cigar in the standard SAM format"""
+    #if not cigar:
+        #cigar_str = '*'
+    #else:
+        #cigar_str =\
+               #''.join([str(char) for substr in cigar for char in substr])
+               ## Strings and flattens the list of tuples
+    #return cigar_str
+
+
+
+class Cigar(object):
+    """A cigar, as used in SAM-format short reads."""
+    def __init__(self, cigar_string):
+        self.elements = [(int(a), b) for (a, b) in \
+                         re.findall(r'(\d+)(\D)', cigar_string)]
+
+    def __iter__(self):
+        return iter(self.elements)
+
+    def __next__(self):
+        return next(iter(self))
+
+    def __str__(self):
+        if not self.elements:
+            cigar_str = '*'
+        else:
+            cigar_str = "".join([str(char) for substr in self.elements for char in substr])
+        return cigar_str
+
+    def __eq__(self, other):
+        return self.elements == other.elements
+
+    def __ne__(self, other):
+        return self.elements != other.elements
 
 
 class Alignment(object):
@@ -184,24 +228,6 @@ class GenomeAnnotation(object):
                 collection = [feature]
         yield collection
 
-
-
-def read_cigar(cigar):
-    """Takes a cigar string, and returns a list of 2-tuples consisting
-    of the index (int) and the operation (one-character str).
-
-    """
-    return [(int(a), b) for (a, b) in re.findall(r'(\d+)(\D)', cigar)]
-
-def print_cigar(cigar):
-    """Prints a cigar in the standard SAM format"""
-    if not cigar:
-        cigar_str = '*'
-    else:
-        cigar_str =\
-               ''.join([str(char) for substr in cigar for char in substr])
-               # Strings and flattens the list of tuples
-    return cigar_str
 
 
 def reverse_complement(sequence):

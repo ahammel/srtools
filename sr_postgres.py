@@ -45,7 +45,7 @@ def sql_insert_command(read, table_name, id_number):
               ("rname", read.rname),
               ("pos", read.pos),
               ("mapq", read.mapq),
-              ("cigar", srtools.print_cigar(read.cigar)),
+              ("cigar", str(read.cigar)),
               ("rnext", read.rnext),
               ("pnext", read.pnext),
               ("tlen", read.tlen),

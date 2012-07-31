@@ -64,7 +64,7 @@ class TestReadMethods(ReadTestSetup):
         assert self.single_read.rname == '*'
         assert self.single_read.pos == 0
         assert self.single_read.mapq == 0
-        assert self.single_read.cigar == []
+        assert self.single_read.cigar.elements == []
         assert self.single_read.rnext == '*'
         assert self.single_read.pnext == 0
         assert self.single_read.tlen == 0
@@ -94,12 +94,6 @@ class TestReadMethods(ReadTestSetup):
 class TestReadFunctions(ReadTestSetup):
     """Tests of the functions associated with the Read class."""
 
-    def test_read_cigar(self):
-        assert srtools.read_cigar('*') == []
-        assert srtools.read_cigar('40M') == [(40, 'M')]
-        assert srtools.read_cigar('18M2D20M') == \
-                    [(18, 'M'), (2, 'D'), (20, 'M')]
-
     def test_parse_sam_read(self):
         test_read = srtools.parse_sam_read(self.sam_string)
         assert test_read == self.single_read
@@ -118,13 +112,13 @@ class TestReadFunctions(ReadTestSetup):
         self.indel_algn.rewind()
         assert list(srtools.dot_indels(self.indel_algn)) == \
             [("AGATGACG..GAAGCTTGATCTCACGAA..NNNNNNNNTTNNCATCCNNNTNNT",
-              [(8, 'M'), (2, 'D'), (65, 'M')],
+              srtools.Cigar("8M2D65M"),
               1),
              ("AGATGACGAAGAAGCTTGATCTCACGAA..NNNNNNNNTTNNCATCCNNNTNNA",
-              [(77, 'M')],
+              srtools.Cigar("77M"),
               1),
              ("AGATGACG..GAAGCTTGATCTCACGAATTNNNNNNNNTTNNCATCCNNNTNNT",
-              [(8, 'M'), (2, 'D'), (18, 'M'), (2, 'I'), (24, 'M')],
+              srtools.Cigar("8M2D18M2I24M"),
               1)]
 
     def test_overlaps(self):
@@ -165,6 +159,18 @@ class TestReadFunctions(ReadTestSetup):
         group2 = next(locus_gen)
         assert not srtools.in_features(group1, genes)
         assert srtools.in_features(group2, genes)
+
+
+class CigarTestSetup(object):
+    pass
+
+
+class TestCigarMethods(CigarTestSetup):
+    def test_string_parsing(self):
+        assert srtools.Cigar('*').elements == []
+        assert srtools.Cigar('40M').elements == [(40, 'M')]
+        assert srtools.Cigar('18M2D20M').elements == \
+                            [(18, 'M'), (2, 'D'), (20, 'M')]
 
 
 class SequenceTestSetup(object):

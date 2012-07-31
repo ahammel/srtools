@@ -26,7 +26,7 @@ def summary_statistics(reads):
     for read in reads:
         summary["rnames"][read.rname] += 1
         summary["flags"][read.flag] += 1
-        summary["cigars"][srtools.print_cigar(read.cigar)] += 1
+        summary["cigars"][str(read.cigar)] += 1
         summary["gc"] += srtools.gc_content(read.seq)
         summary["read_count"] += 1
         summary["hashes"][read.qname] += 1
