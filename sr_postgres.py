@@ -5,7 +5,7 @@ import postgresql
 class PostgresAlignment(srtools.Alignment):
     """An illumina alignment using data stored as a postgres database. The data
     file is a pg locator for the db.
-    
+
     """
     def read_generator(self):
         with postgresql.open(self.data_file) as db:
@@ -18,19 +18,17 @@ class PostgresAlignment(srtools.Alignment):
         with postgresql.open(self.data_file) as db:
             head_tuple = next(iter(db.prepare("SELECT * FROM head;")))
             return head_tuple[0]
-        
 
 
 def parse_postgres_read(row):
     """Returns a read object from a postgres read database row."""
     qname, flag, rname, pos, mapq,\
-    cigar, rnext, pnext, tlen, seq, qual = row[1:12]
+        cigar, rnext, pnext, tlen, seq, qual = row[1:12]
 
     tags = row[-1].split()
 
-    return srtools.Read(qname, flag, rname, pos, mapq, cigar, rnext, pnext,\
+    return srtools.Read(qname, flag, rname, pos, mapq, cigar, rnext, pnext,
                         tlen, seq, qual, tags)
-
 
 
 def sql_insert_command(read, table_name, id_number):
@@ -53,7 +51,7 @@ def sql_insert_command(read, table_name, id_number):
               ("qual", read.qual)]
 
     field_list = []
-    value_list = [] 
+    value_list = []
     for f, v in values:
         field_list.append(f)
         if isinstance(v, int):

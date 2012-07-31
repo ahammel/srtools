@@ -64,29 +64,11 @@ class Read(object):
         last_base = self.pos + sum([i for i, o in self.cigar if o == "M"]) - 1
         return (first_base, last_base)
 
-#def read_cigar(cigar):
-    #"""Takes a cigar string, and returns a list of 2-tuples consisting
-    #of the index (int) and the operation (one-character str).
-
-    #"""
-    #return [(int(a), b) for (a, b) in re.findall(r'(\d+)(\D)', cigar)]
-
-#def print_cigar(cigar):
-    #"""Prints a cigar in the standard SAM format"""
-    #if not cigar:
-        #cigar_str = '*'
-    #else:
-        #cigar_str =\
-               #''.join([str(char) for substr in cigar for char in substr])
-               ## Strings and flattens the list of tuples
-    #return cigar_str
-
-
 
 class Cigar(object):
     """A cigar, as used in SAM-format short reads."""
     def __init__(self, cigar_string):
-        self.elements = [(int(a), b) for (a, b) in \
+        self.elements = [(int(a), b) for (a, b) in
                          re.findall(r'(\d+)(\D)', cigar_string)]
 
     def __iter__(self):
@@ -99,7 +81,8 @@ class Cigar(object):
         if not self.elements:
             cigar_str = '*'
         else:
-            cigar_str = "".join([str(char) for substr in self.elements for char in substr])
+            cigar_str = "".join([str(char) for substr in self.elements
+                                 for char in substr])
         return cigar_str
 
     def __eq__(self, other):
@@ -122,7 +105,7 @@ class Alignment(object):
         return self
 
     def filter_reads(self, function):
-        """Returns a generator of reads where function(read) returns a truthy 
+        """Returns a generator of reads where function(read) returns a truthy
         value.
 
         """
@@ -144,7 +127,7 @@ class Alignment(object):
                 yield read
 
     def collect_reads(self, function):
-        """Returns a generator which yields generators of consecutive reads 
+        """Returns a generator which yields generators of consecutive reads
         which all return the same value when the specified function is applied.
 
         """
@@ -183,7 +166,6 @@ class SamAlignment(Alignment):
             for line in f:
                 if line and not line.startswith("@"):
                     yield parse_sam_read(line)
-
 
 
 class Feature(object):
@@ -229,7 +211,6 @@ class GenomeAnnotation(object):
         yield collection
 
 
-
 def reverse_complement(sequence):
     rc = []
     seq = list(sequence)
@@ -246,19 +227,11 @@ def parse_sam_read(string):
                 fields[10], tags=fields[11:])
 
 
-def get_head(samfile):
-    """Returns the head of a sam_file"""
-    headlines = []
-    with open(samfile) as f:
-        for line in f:
-            if line and line.startswith("@"):
-                headlines.append(line)
-            else:
-                return "".join(headlines)
-    
-
 def read_fasta(fasta_file):
-    """Returns a dictionary a sequence names and values from a fasta-format file."""
+    """Returns a dictionary a sequence names and values from a fasta-format
+    file.
+
+    """
     seq_dict = {}
     with open(fasta_file) as f:
         for line in f:
@@ -293,7 +266,7 @@ def parse_gff_feature(feature_string):
     frame = fields[7]
     attribute = fields[8]
 
-    return Feature(sequence, source, f_type, start, end, score, strand, 
+    return Feature(sequence, source, f_type, start, end, score, strand,
                    frame, attribute)
 
 
@@ -310,7 +283,6 @@ def read_gff(gff_file):
             else:
                 features.append(parse_gff_feature(line))
     return GenomeAnnotation(head="".join(headlines), features=features)
-
 
 
 def convert_indecies(cigar):
@@ -388,7 +360,7 @@ def majority(nucleotides, cutoff=0.5):
         consensus = "N"
     return consensus
 
-    
+
 def consensus(reads, cutoff=0.5):
     """Returns the consensus sequence of a collection of reads."""
     all_nucleotides = {}
@@ -443,9 +415,9 @@ def coverage(reads):
 
     """
     if not reads:
-        return (0,0)
+        return (0, 0)
 
-    first, last = reads[0].get_covered_range() 
+    first, last = reads[0].get_covered_range()
     for read in reads[1:]:
         x0, x1 = read.get_covered_range()
         if x0 < first:
@@ -488,14 +460,14 @@ def gc_content(sequence):
 
 
 def block_sequence(seq, start, n):
-    """Splits a sequence into blocks of size n, prepended by the first 'start' items.
-    Helper function for reading_frames.
+    """Splits a sequence into blocks of size n, prepended by the first 'start'
+    items. Helper function for reading_frames.
 
     """
-    blocks = [] 
+    blocks = []
     if start != 0:
         blocks.append(seq[:start])
-    blocks.extend([seq[i:i+n] for i in range(start, len(seq), n)])
+    blocks.extend([seq[i:i + n] for i in range(start, len(seq), n)])
     return  blocks
 
 
@@ -512,7 +484,10 @@ def reading_frames(sequence):
 
 
 def open_reading_frames(sequence):
-    """Returns a list of the ORFs of the sequence in all six translation frames."""
+    """Returns a list of the ORFs of the sequence in all six translation
+    frames.
+
+    """
     stop_codons = ["TAG", "TAA", "TGA"]
     orfs = []
     for frame in reading_frames(sequence):
