@@ -4,7 +4,7 @@ import pytest
 
 
 class PostgresAlignmentTestSetup(object):
-    sam_alignment = srtools.SamAlignment("test/test_insertion.sam")
+    sam_alignment = srtools.SamAlignment("test/test_data/test_insertion.sam")
 
     pq = "alex@localhost/test_alignment.db?"
 
