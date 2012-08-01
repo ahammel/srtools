@@ -1,4 +1,4 @@
-import srtools
+from srtools import srtools
 import postgresql
 
 

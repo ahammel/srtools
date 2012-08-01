@@ -1,6 +1,5 @@
 import pytest
-import srstats
-import srtools
+from srtools import srtools, srstats
 import os
 import glob
 

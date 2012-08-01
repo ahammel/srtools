@@ -1,4 +1,4 @@
-import srtools
+from srtools import srtools
 import sys
 from collections import Counter
 
