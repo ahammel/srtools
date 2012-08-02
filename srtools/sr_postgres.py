@@ -1,8 +1,8 @@
-from srtools import srtools
+from srtools import sr_sam
 import postgresql
 
 
-class PostgresAlignment(srtools.Alignment):
+class PostgresAlignment(sr_sam.Alignment):
     """An illumina alignment using data stored as a postgres database. The data
     file is a pg locator for the db.
 
@@ -27,12 +27,12 @@ def parse_postgres_read(row):
 
     tags = row[-1].split()
 
-    return srtools.Read(qname, flag, rname, pos, mapq, cigar, rnext, pnext,
+    return sr_sam.Read(qname, flag, rname, pos, mapq, cigar, rnext, pnext,
                         tlen, seq, qual, tags)
 
 
 def sql_insert_command(read, table_name, id_number):
-    """Returns an SQL command that will insert the given srtools.Read into
+    """Returns an SQL command that will insert the given sr_sam.Read into
     the given table. The table is assumed to have the fields specified by the
     postgres_dump function, to which this function is a helper.
 

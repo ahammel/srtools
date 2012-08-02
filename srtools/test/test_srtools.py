@@ -374,11 +374,11 @@ def test_summary_statistics():
 
 
 def test_speed_test():
-   align = srtools.SamAlignment("test/test_data/speed_test.sam")
-   annotation = srtools.read_gff("test/test_data/speed_test.gff")
-   for locus in srtools.expressed_loci(align):
-        srtools.in_features(locus, annotation.features)
-        srtools.consensus(locus)
+   align = sr_sam.SamAlignment("test/test_data/speed_test.sam")
+   annotation = sr_gff.read_gff("test/test_data/speed_test.gff")
+   for locus in sr_sam.expressed_loci(align):
+        sr_gff.in_features(locus, annotation.features)
+        sr_sam.consensus(locus)
 
 def test_tear_down():
     os.remove("single_read_test.sam")

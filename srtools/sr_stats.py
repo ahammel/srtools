@@ -1,4 +1,4 @@
-from srtools import srtools
+from srtools import sr_sam, sr_seq
 import sys
 from collections import Counter
 
@@ -28,7 +28,7 @@ def summary_statistics(reads):
         summary["rnames"][read.rname] += 1
         summary["flags"][read.flag] += 1
         summary["cigars"][str(read.cigar)] += 1
-        summary["gc"] += srtools.gc_content(read.seq)
+        summary["gc"] += sr_seq.gc_content(read.seq)
         summary["read_count"] += 1
         summary["hashes"][read.qname] += 1
 
@@ -53,7 +53,7 @@ def print_summary_statistics(input_file, output_file=sys.stdout):
     output file, or to stdout if not output_file is selected.
 
     """
-    alignment = srtools.SamAlignment(input_file)
+    alignment = sr_sam.SamAlignment(input_file)
     stats = summary_statistics(alignment)
 
     if not output_file == sys.stdout:
