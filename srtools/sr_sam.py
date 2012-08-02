@@ -1,25 +1,10 @@
 import re
-import sys
-import itertools
-import random
-
-
-COMPLEMENT = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A', 'N': 'N'}
 
 
 class UnmappedReadError(ValueError):
     """The exception raised when attempting an illegal operation on an unmapped
     read. A consensus sequence cannot be derived from an unmapped read, for
     example.
-
-    """
-    pass
-
-
-class NullSequenceError(ValueError):
-    """The exception raised when attempting to illegally manipulate a null
-    sequence (i.e., an empty sequence or one composed entirely of N's).
-    The GC content of a null sequence is undefined, for example.
 
     """
     pass
@@ -168,121 +153,12 @@ class SamAlignment(Alignment):
                     yield parse_sam_read(line)
 
 
-class Feature(object):
-    """A GFF genomic feature."""
-    def __init__(self, sequence, source, f_type, start, end, score,
-                 strand, frame, attribute):
-        self.sequence = str(sequence)
-        self.source = str(source)
-        self.f_type = str(f_type)
-        self.start = int(start)
-        self.end = int(end)
-        self.score = score
-        self.strand = strand
-        self.frame = frame
-        self.attribute = attribute
-
-
-class GenomeAnnotation(object):
-    """A genome-spanning collection of Features"""
-    def __init__(self, head, features):
-        self.head = head
-        self.features = features
-
-    def filter_features(self, function):
-        """Returns a list of features where function(feature) reutrns a truthy
-        value.
-
-        """
-        return [f for f in self.features if function(f)]
-
-    def collect_features(self, function):
-        """Returns a generator which yields lists of consecutive features which
-        all return the same value when the specified function is applied.
-
-        """
-        collection = [self.features[0]]
-        for feature in self.features[1:]:
-            if function(feature) == function(collection[-1]):
-                collection.append(feature)
-            else:
-                yield collection
-                collection = [feature]
-        yield collection
-
-
-def reverse_complement(sequence):
-    rc = []
-    seq = list(sequence)
-    while seq:
-        rc.append(COMPLEMENT[seq.pop()])
-    return "".join(rc)
-
-
 def parse_sam_read(string):
     """Takes a string in SAMfile format and returns a Read object."""
     fields = string.strip().split()
     return Read(fields[0], fields[1], fields[2], fields[3], fields[4],
                 fields[5], fields[6], fields[7], fields[8], fields[9],
                 fields[10], tags=fields[11:])
-
-
-def read_fasta(fasta_file):
-    """Returns a dictionary a sequence names and values from a fasta-format
-    file.
-
-    """
-    seq_dict = {}
-    with open(fasta_file) as f:
-        for line in f:
-            if line.startswith(">"):
-                name = line[1:].strip()
-            elif line.strip():
-                seq_dict.setdefault(name, "")
-                seq_dict[name] += line.strip()
-    return seq_dict
-
-
-def parse_gff_feature(feature_string):
-    """Creates a Feature object from a GFF feature string."""
-    fields = feature_string.strip().split("\t")
-
-    while True:
-        try:
-            fields[fields.index('.')] = None
-        except ValueError:
-            break
-
-    sequence = fields[0]
-    source = fields[1]
-    f_type = fields[2]
-    start = int(fields[3])
-    end = int(fields[4])
-    if fields[5]:
-        score = float(fields[5])
-    else:
-        score = fields[5]
-    strand = fields[6]
-    frame = fields[7]
-    attribute = fields[8]
-
-    return Feature(sequence, source, f_type, start, end, score, strand,
-                   frame, attribute)
-
-
-def read_gff(gff_file):
-    """Creates a GenomeAnnotation object from a GFF file"""
-    headlines = []
-    features = []
-    with open(gff_file) as f:
-        for line in f:
-            if line.startswith("##"):
-                headlines.append(line)
-            elif line.startswith("#"):
-                pass
-            else:
-                features.append(parse_gff_feature(line))
-    return GenomeAnnotation(head="".join(headlines), features=features)
 
 
 def convert_indecies(cigar):
@@ -386,6 +262,24 @@ def consensus(reads, cutoff=0.5):
     return consensus.replace('.', '')
 
 
+def coverage(reads):
+    """Returns a tuple consisting of the positions of the first and last base
+    covered by the list of reads.
+
+    """
+    if not reads:
+        return (0, 0)
+
+    first, last = reads[0].get_covered_range()
+    for read in reads[1:]:
+        x0, x1 = read.get_covered_range()
+        if x0 < first:
+            first = x0
+        if x1 > last:
+            last = x1
+    return (first, last)
+
+
 def overlaps(read1, read2):
     """Returns True if the two reads cover at least one base in common and
     False otherwise.
@@ -407,109 +301,3 @@ def expressed_loci(reads):
             yield locus
             locus = [read]
     yield locus
-
-
-def coverage(reads):
-    """Returns a tuple consisting of the positions of the first and last base
-    covered by the list of reads.
-
-    """
-    if not reads:
-        return (0, 0)
-
-    first, last = reads[0].get_covered_range()
-    for read in reads[1:]:
-        x0, x1 = read.get_covered_range()
-        if x0 < first:
-            first = x0
-        if x1 > last:
-            last = x1
-    return (first, last)
-
-
-def in_features(reads, features):
-    """Returns a boolean indicating whether any of the reads in the first
-    argument overlap with any of the features in the second.
-
-    """
-    overlap = False
-    r0, r1 = coverage(reads)
-    for f in features:
-        if f.start <= r0 <= f.end or f.start <= r1 <= f.end:
-            overlap = True
-            break
-        elif f.start > r1:
-            break
-    return overlap
-
-
-def gc_content(sequence):
-    """Returns the fraction of the sequence which consists of GC base pairs.
-
-    """
-    base_counts = {x: sequence.count(x) for x in sequence if x in "ACGT"}
-    base_counts.setdefault("G", 0)
-    base_counts.setdefault("C", 0)
-    total = sum(base_counts.values())
-
-    if total == 0:
-        raise NullSequenceError
-
-    gc_count = base_counts["G"] + base_counts["C"]
-    return gc_count / total
-
-
-def block_sequence(seq, start, n):
-    """Splits a sequence into blocks of size n, prepended by the first 'start'
-    items. Helper function for reading_frames.
-
-    """
-    blocks = []
-    if start != 0:
-        blocks.append(seq[:start])
-    blocks.extend([seq[i:i + n] for i in range(start, len(seq), n)])
-    return  blocks
-
-
-def reading_frames(sequence):
-    """Returns the six possible reading frames of the sequence."""
-
-    frames = []
-
-    for i in range(3):
-        frames.append(block_sequence(sequence, i, 3))
-        frames.append(block_sequence(reverse_complement(sequence), i, 3))
-
-    return frames
-
-
-def open_reading_frames(sequence):
-    """Returns a list of the ORFs of the sequence in all six translation
-    frames.
-
-    """
-    stop_codons = ["TAG", "TAA", "TGA"]
-    orfs = []
-    for frame in reading_frames(sequence):
-        starts = [i for i, x in enumerate(frame) if x == "ATG"]
-        stops = [i for i, x in enumerate(frame) if x in stop_codons]
-        product = itertools.product(starts, stops)
-        fr_list = ["".join(frame[a:b]) for a, b in product if a < b]
-        orfs.extend(fr_list)
-    return orfs
-
-
-def random_sequence(length):
-    """Returns a random nucleotide sequence of the specified length."""
-    return "".join([random.choice("ACGT") for i in range(length)])
-
-
-def randomize_sequence(seq):
-    """Randomizes a sequence of nucleotides, preserving N's"""
-    nucs = []
-    for nucleotide in seq:
-        if nucleotide == "N":
-            nucs.append("N")
-        else:
-            nucs.append(random.choice("ACGT"))
-    return "".join(nucs)

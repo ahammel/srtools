@@ -1,5 +1,5 @@
 import pytest
-from srtools import srtools, srstats
+from srtools import sr_sam, sr_stats, sr_seq, sr_gff
 import os
 import glob
 
@@ -11,7 +11,7 @@ class ReadTestSetup(object):
                   "HHHHHHHHHHHHHHHHHHHHHH==@##################################"
                   "#############\tYT:Z:UP\tYF:Z:NS")
 
-    single_read = srtools.Read(
+    single_read = sr_sam.Read(
             qname="SRR360147.1",
             flag=77,
             rname='*',
@@ -44,15 +44,15 @@ class ReadTestSetup(object):
             print(self.sam_string, file=f)
             assert True
 
-    single_read_alignment = srtools.SamAlignment("single_read_test.sam") 
+    single_read_alignment = sr_sam.SamAlignment("single_read_test.sam") 
 
-    indel_algn = srtools.SamAlignment("./test/test_data/test_indel.sam")
+    indel_algn = sr_sam.SamAlignment("./test/test_data/test_indel.sam")
 
-    reverse_complement_align = srtools.SamAlignment("test/test_data/test_rc_consensus.sam")
+    reverse_complement_align = sr_sam.SamAlignment("test/test_data/test_rc_consensus.sam")
     
-    reverse_complement_align_copy = srtools.SamAlignment("test/test_data/test_rc_consensus.sam")
+    reverse_complement_align_copy = sr_sam.SamAlignment("test/test_data/test_rc_consensus.sam")
 
-    expressed_locus_alignment = srtools.SamAlignment("test/test_data/test_expressed_locus.sam")
+    expressed_locus_alignment = sr_sam.SamAlignment("test/test_data/test_expressed_locus.sam")
 
     
 class TestReadMethods(ReadTestSetup):
@@ -94,70 +94,78 @@ class TestReadFunctions(ReadTestSetup):
     """Tests of the functions associated with the Read class."""
 
     def test_parse_sam_read(self):
-        test_read = srtools.parse_sam_read(self.sam_string)
+        test_read = sr_sam.parse_sam_read(self.sam_string)
         assert test_read == self.single_read
 
     def test_consensus(self):
         self.indel_algn.rewind()
-        with pytest.raises(srtools.UnmappedReadError):
-            srtools.consensus([self.single_read])
-        assert srtools.consensus(list(self.indel_algn)) ==\
+        with pytest.raises(sr_sam.UnmappedReadError):
+            sr_sam.consensus([self.single_read])
+        assert sr_sam.consensus(list(self.indel_algn)) ==\
              "AGATGACGGAAGCTTGATCTCACGAANNNNNNNNTTNNCATCCNNNTNNT"
 
-        assert srtools.consensus(self.reverse_complement_align) == \
+        assert sr_sam.consensus(self.reverse_complement_align) == \
                                                                 "AAAGGGAAAA"
 
     def test_dot_indels(self):
         self.indel_algn.rewind()
-        assert list(srtools.dot_indels(self.indel_algn)) == \
+        assert list(sr_sam.dot_indels(self.indel_algn)) == \
             [("AGATGACG..GAAGCTTGATCTCACGAA..NNNNNNNNTTNNCATCCNNNTNNT",
-              srtools.Cigar("8M2D65M"),
+              sr_sam.Cigar("8M2D65M"),
               1),
              ("AGATGACGAAGAAGCTTGATCTCACGAA..NNNNNNNNTTNNCATCCNNNTNNA",
-              srtools.Cigar("77M"),
+              sr_sam.Cigar("77M"),
               1),
              ("AGATGACG..GAAGCTTGATCTCACGAATTNNNNNNNNTTNNCATCCNNNTNNT",
-              srtools.Cigar("8M2D18M2I24M"),
+              sr_sam.Cigar("8M2D18M2I24M"),
               1)]
 
     def test_overlaps(self):
-        read1, read2, read3, read4 = list(srtools.SamAlignment("test/test_data/test_overlap.sam"))
-        assert not srtools.overlaps(read1, read2)
-        assert srtools.overlaps(read1, read3)
-        assert not srtools.overlaps(read1, read4)
-        assert srtools.overlaps(read2, read3)
-        assert srtools.overlaps(read2, read4)
-        assert srtools.overlaps(read3, read4)
+        read1, read2, read3, read4 = \
+            list(sr_sam.SamAlignment("test/test_data/test_overlap.sam"))
+        assert not sr_sam.overlaps(read1, read2)
+        assert sr_sam.overlaps(read1, read3)
+        assert not sr_sam.overlaps(read1, read4)
+        assert sr_sam.overlaps(read2, read3)
+        assert sr_sam.overlaps(read2, read4)
+        assert sr_sam.overlaps(read3, read4)
 
         self.expressed_locus_alignment.rewind()
         read1, read2, read3, read4 = list(self.expressed_locus_alignment)
-        assert srtools.overlaps(read1, read2)
-        assert not srtools.overlaps(read1, read3)
-        assert not srtools.overlaps(read1, read4)
-        assert not srtools.overlaps(read2, read3)
-        assert not srtools.overlaps(read2, read4)
-        assert srtools.overlaps(read3, read4)
+        assert sr_sam.overlaps(read1, read2)
+        assert not sr_sam.overlaps(read1, read3)
+        assert not sr_sam.overlaps(read1, read4)
+        assert not sr_sam.overlaps(read2, read3)
+        assert not sr_sam.overlaps(read2, read4)
+        assert sr_sam.overlaps(read3, read4)
 
     def test_coverage(self):
         self.expressed_locus_alignment.rewind()
         test_reads = list(self.expressed_locus_alignment)
-        assert srtools.coverage(test_reads[:1]) == (1,5)
-        assert srtools.coverage(test_reads[:2]) == (1,7)
-        assert srtools.coverage(test_reads[:3]) == (1,17)
-        assert srtools.coverage(test_reads[:4]) == (1,18)
-        assert srtools.coverage(test_reads[2:]) == (13,18)
-        assert srtools.coverage(test_reads[1:]) == (3,18)
+        assert sr_sam.coverage(test_reads[:1]) == (1,5)
+        assert sr_sam.coverage(test_reads[:2]) == (1,7)
+        assert sr_sam.coverage(test_reads[:3]) == (1,17)
+        assert sr_sam.coverage(test_reads[:4]) == (1,18)
+        assert sr_sam.coverage(test_reads[2:]) == (13,18)
+        assert sr_sam.coverage(test_reads[1:]) == (3,18)
 
-    def test_in_features(self):
-        self.expressed_locus_alignment.rewind()
-        alignment = self.expressed_locus_alignment
-        annotation = srtools.read_gff("test/test_data/test.gff")
-        genes = annotation.filter_features(lambda x: x.f_type == "gene")
-        locus_gen = srtools.expressed_loci(alignment)
-        group1 = next(locus_gen)
-        group2 = next(locus_gen)
-        assert not srtools.in_features(group1, genes)
-        assert srtools.in_features(group2, genes)
+    def test_convert_indecies(self):
+        cigar = [(1, "M"), (2, "M"), (3, "M")]
+        c_cigar = sr_sam.convert_indecies(cigar)
+        assert c_cigar[0] == (0, 1, "M")
+        assert c_cigar[1] == (1, 2, "M")
+        assert c_cigar[2] == (3, 3, "M")
+
+    def test_make_dot_queue(self):
+        trivial_read = ("AAAA", [(4, "M")], 1)
+        trivial_list = [("AAAA", [(4, "M")], 1)]
+        assert sr_sam.make_dot_queue(trivial_read, trivial_list) == []
+        hard_read = ("AAAA", [(3, "M"), (2, "D"), (1, "M")], 1)
+        hard_list = [("AAAA", [(3, "M"), (2, "D"), (1, "M")], 1),
+                     ("AAATTA", [(6, "M")], 1),
+                     ("CAATTA", [(1, "I"), (4, "M")], 2)]
+        assert sr_sam.make_dot_queue(hard_read, hard_list) == \
+                [(3, 2), (1, 1)]
 
 
 class CigarTestSetup(object):
@@ -166,67 +174,49 @@ class CigarTestSetup(object):
 
 class TestCigarMethods(CigarTestSetup):
     def test_string_parsing(self):
-        assert srtools.Cigar('*').elements == []
-        assert srtools.Cigar('40M').elements == [(40, 'M')]
-        assert srtools.Cigar('18M2D20M').elements == \
+        assert sr_sam.Cigar('*').elements == []
+        assert sr_sam.Cigar('40M').elements == [(40, 'M')]
+        assert sr_sam.Cigar('18M2D20M').elements == \
                             [(18, 'M'), (2, 'D'), (20, 'M')]
 
 
 class SequenceTestSetup(object):
-    fasta_reads = srtools.read_fasta("test/test_data/fasta.fa")
+    fasta_reads = sr_seq.read_fasta("test/test_data/fasta.fa")
 
 class TestSequenceFunctions(SequenceTestSetup):
     def test_reverse_complement(self):
-        assert srtools.reverse_complement("") == ""
-        assert srtools.reverse_complement("N") == "N"
-        assert srtools.reverse_complement("ACGT") == "ACGT"
-        assert srtools.reverse_complement("GCCAT") == "ATGGC"
+        assert sr_seq.reverse_complement("") == ""
+        assert sr_seq.reverse_complement("N") == "N"
+        assert sr_seq.reverse_complement("ACGT") == "ACGT"
+        assert sr_seq.reverse_complement("GCCAT") == "ATGGC"
 
     def test_read_fasta(self):
         assert len(self.fasta_reads) == 2
         assert self.fasta_reads["read1"] == "AAAAAAAAAAAAAA"
         assert self.fasta_reads["read2"] == "ATGAATGAATAAAAAAAAATAATTATTTCAT" 
 
-    def test_convert_indecies(self):
-        cigar = [(1, "M"), (2, "M"), (3, "M")]
-        c_cigar = srtools.convert_indecies(cigar)
-        assert c_cigar[0] == (0, 1, "M")
-        assert c_cigar[1] == (1, 2, "M")
-        assert c_cigar[2] == (3, 3, "M")
-
-    def test_make_dot_queue(self):
-        trivial_read = ("AAAA", [(4, "M")], 1)
-        trivial_list = [("AAAA", [(4, "M")], 1)]
-        assert srtools.make_dot_queue(trivial_read, trivial_list) == []
-        hard_read = ("AAAA", [(3, "M"), (2, "D"), (1, "M")], 1)
-        hard_list = [("AAAA", [(3, "M"), (2, "D"), (1, "M")], 1),
-                     ("AAATTA", [(6, "M")], 1),
-                     ("CAATTA", [(1, "I"), (4, "M")], 2)]
-        assert srtools.make_dot_queue(hard_read, hard_list) == \
-                [(3, 2), (1, 1)]
-
     def test_gc_content(self):
-        pytest.raises(srtools.NullSequenceError, srtools.gc_content, "")
-        pytest.raises(srtools.NullSequenceError, srtools.gc_content, "NNNNN")
-        assert srtools.gc_content("AAATTT") == 0.0
-        assert srtools.gc_content("GGGGCC") == 1.0
-        assert srtools.gc_content("ACGTACGT") == 0.5
-        assert srtools.gc_content("ACCTACGT") == 0.5
+        pytest.raises(sr_seq.NullSequenceError, sr_seq.gc_content, "")
+        pytest.raises(sr_seq.NullSequenceError, sr_seq.gc_content, "NNNNN")
+        assert sr_seq.gc_content("AAATTT") == 0.0
+        assert sr_seq.gc_content("GGGGCC") == 1.0
+        assert sr_seq.gc_content("ACGTACGT") == 0.5
+        assert sr_seq.gc_content("ACCTACGT") == 0.5
     
     def test_random_sequence(self):
-        seq = srtools.random_sequence(10)
+        seq = sr_seq.random_sequence(10)
         assert len(seq) == 10
         for letter in seq:
             assert letter in "ACGT"
 
     def test_randomize_sequence(self):
         seq = "AACGNNNNAACG"
-        rseq = srtools.randomize_sequence(seq)
+        rseq = sr_seq.randomize_sequence(seq)
         assert rseq[4:8] == "NNNN"
         assert rseq != seq
 
     def test_reading_frames(self):
-        assert srtools.reading_frames(self.fasta_reads["read1"]) == \
+        assert sr_seq.reading_frames(self.fasta_reads["read1"]) == \
             [["AAA", "AAA", "AAA", "AAA", "AA"],
              ["TTT", "TTT", "TTT", "TTT", "TT"],
              ["A", "AAA", "AAA", "AAA", "AAA", "A"],
@@ -234,7 +224,7 @@ class TestSequenceFunctions(SequenceTestSetup):
              ["AA", "AAA", "AAA", "AAA", "AAA"],
              ["TT", "TTT", "TTT", "TTT", "TTT"]]
 
-        assert srtools.reading_frames(self.fasta_reads["read2"]) == \
+        assert sr_seq.reading_frames(self.fasta_reads["read2"]) == \
             [["ATG", "AAT", "GAA", "TAA", "AAA", "AAA", "ATA", "ATT", "ATT", "TCA", "T"],
              ["ATG", "AAA", "TAA", "TTA", "TTT", "TTT", "TTT", "ATT", "CAT", "TCA", "T"],
              ["A", "TGA", "ATG", "AAT", "AAA", "AAA", "AAA", "TAA", "TTA", "TTT", "CAT"],
@@ -243,8 +233,8 @@ class TestSequenceFunctions(SequenceTestSetup):
              ["AT", "GAA", "ATA", "ATT", "ATT", "TTT", "TTT", "TAT", "TCA", "TTC", "AT"]]
 
     def test_open_reading_frames(self):
-        assert srtools.open_reading_frames(self.fasta_reads["read1"]) == []
-        assert srtools.open_reading_frames(self.fasta_reads["read2"]) == \
+        assert sr_seq.open_reading_frames(self.fasta_reads["read1"]) == []
+        assert sr_seq.open_reading_frames(self.fasta_reads["read2"]) == \
             ["ATGAATGAA", "ATGAAA", "ATGAATAAAAAAAAA"]
 
 
@@ -255,17 +245,17 @@ class AlignmentTestSetup(ReadTestSetup):
 class TestAlignmentMethods(AlignmentTestSetup):
     def test_str(self):
         for test_file in glob.glob("test/test_data/*.sam"):
-            test_algn = srtools.SamAlignment(test_file)
+            test_algn = sr_sam.SamAlignment(test_file)
             with open("tmp.sam", "w") as f:
                 print(test_algn, file=f)
-            test_algn = srtools.SamAlignment(test_file)
-            assert str(test_algn) == str(srtools.SamAlignment("tmp.sam"))
+            test_algn = sr_sam.SamAlignment(test_file)
+            assert str(test_algn) == str(sr_sam.SamAlignment("tmp.sam"))
         os.remove("tmp.sam")
 
     def test_iter(self):
         self.expressed_locus_alignment.rewind()
         for read in self.expressed_locus_alignment:
-            assert isinstance(read, srtools.Read)
+            assert isinstance(read, sr_sam.Read)
 
     def test_filter_reads(self):
         self.expressed_locus_alignment.rewind()
@@ -292,7 +282,7 @@ class TestAlignmentMethods(AlignmentTestSetup):
     def test_expressed_loci(self):
         self.expressed_locus_alignment.rewind()
         alignment = self.expressed_locus_alignment
-        locus_gen = srtools.expressed_loci(alignment)
+        locus_gen = sr_sam.expressed_loci(alignment)
         group1 = next(locus_gen)
         group2 = next(locus_gen)
         assert group1[0].qname == "SRR360147.1"
@@ -301,12 +291,12 @@ class TestAlignmentMethods(AlignmentTestSetup):
         assert group2[1].qname == "SRR360147.4"
 
 
-class FeatureTestSetup(object):
-    test_feature = srtools.parse_gff_feature("Chr1\tTAIR9\tchromosome\t1\t"
-                                             "30427671\t.\t.\t.\tID=Chr1;"
-                                             "Name=Chr1")
+class FeatureTestSetup(AlignmentTestSetup):
+    test_feature = sr_gff.parse_gff_feature("Chr1\tTAIR9\tchromosome\t1\t"
+                                            "30427671\t.\t.\t.\tID=Chr1;"
+                                            "Name=Chr1")
 
-    test_annotation = srtools.read_gff("test/test_data/test.gff")
+    test_annotation = sr_gff.read_gff("test/test_data/test.gff")
 
 
 class TestFeatureFunctions(FeatureTestSetup):
@@ -351,12 +341,24 @@ class TestGenomeAnnotationFunctions(FeatureTestSetup):
         assert self.test_annotation.features[0].attribute == "f1"
 
 
+    def test_in_features(self):
+        self.expressed_locus_alignment.rewind()
+        alignment = self.expressed_locus_alignment
+        annotation = sr_gff.read_gff("test/test_data/test.gff")
+        genes = annotation.filter_features(lambda x: x.f_type == "gene")
+        locus_gen = sr_sam.expressed_loci(alignment)
+        group1 = next(locus_gen)
+        group2 = next(locus_gen)
+        assert not sr_gff.in_features(group1, genes)
+        assert sr_gff.in_features(group2, genes)
+
+
 class TestORFFunctions():
-    reads = srtools.read_fasta("test/test_data/fasta.fa")
+    reads = sr_seq.read_fasta("test/test_data/fasta.fa")
 
 
 def test_summary_statistics():
-    srstats.print_summary_statistics("test/test_data/speed_test.sam",
+    sr_stats.print_summary_statistics("test/test_data/speed_test.sam",
                                      output_file="test_summary.txt")
     test_file = open("test_summary.txt")
     known_file = open("test/test_data/david_summary.txt")
