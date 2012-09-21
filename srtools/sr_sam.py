@@ -10,6 +10,14 @@ class UnmappedReadError(ValueError):
     pass
 
 
+class UnpairedReadError(ValueError):
+    """The exception raised when performing a paired-read-specific operation
+    on an unpaired read.
+
+    """
+    pass
+
+
 class Read(object):
     """A sam-format sequence read."""
 
@@ -152,6 +160,29 @@ class SamAlignment(Alignment):
                 if line and not line.startswith("@"):
                     yield parse_sam_read(line)
 
+    def get_mate_pair(self, read):
+        """Returns the mate pair of the read, raising an UnpairedReadError
+        if there isn't one.
+            
+        """
+        if read.rnext == "=":
+            target_rname = read.rname
+        else:
+            target_rname = read.rnext
+
+        target_pos = read.pnext
+
+        new_connection = SamAlignment(self.data_file)
+
+        for c_read in new_connection:   #c_read = candidate read
+            if c_read.rname == target_rname and c_read.pos == target_pos:
+                mate_pair = c_read
+                break
+        else:
+            raise UnpairedReadError
+
+        return mate_pair
+
 
 def parse_sam_read(string):
     """Takes a string in SAMfile format and returns a Read object."""
@@ -159,6 +190,20 @@ def parse_sam_read(string):
     return Read(fields[0], fields[1], fields[2], fields[3], fields[4],
                 fields[5], fields[6], fields[7], fields[8], fields[9],
                 fields[10], tags=fields[11:])
+
+
+def has_mate_pair(read):
+    """Returns true if the read has a mate pair in the alignment according to
+    the bitflag, rnext, and pnext fields.
+
+    """
+    flag_set = bool(read.flag & 3 == 3) # Returns True if first two bitflags
+                                        # are set (i.e., if the read is paired
+                                        # and mapped in its propper pair).
+    pnext_set = bool(read.pnext != 0)
+    rnext_set = bool(read.rnext != '*')
+
+    return flag_set and pnext_set and rnext_set
 
 
 def convert_indecies(cigar):

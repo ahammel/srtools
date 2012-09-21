@@ -54,6 +54,8 @@ class ReadTestSetup(object):
 
     expressed_locus_alignment = sr_sam.SamAlignment("test/test_data/test_expressed_locus.sam")
 
+    mate_pair_align= sr_sam.SamAlignment("test/test_data/test_mate_pair.sam")
+
     
 class TestReadMethods(ReadTestSetup):
     """Tests the Read class methods."""
@@ -166,6 +168,11 @@ class TestReadFunctions(ReadTestSetup):
                      ("CAATTA", [(1, "I"), (4, "M")], 2)]
         assert sr_sam.make_dot_queue(hard_read, hard_list) == \
                 [(3, 2), (1, 1)]
+
+    def test_has_mate_pair(self):
+        assert not sr_sam.has_mate_pair(self.single_read)
+        for read in self.mate_pair_align:
+            assert sr_sam.has_mate_pair(read)
 
 
 class CigarTestSetup(object):
@@ -289,6 +296,19 @@ class TestAlignmentMethods(AlignmentTestSetup):
         assert group1[1].qname == "SRR360147.3"
         assert group2[0].qname == "SRR360147.2"
         assert group2[1].qname == "SRR360147.4"
+
+    def test_get_mate_pair(self):
+        self.mate_pair_align.rewind()
+        first = next(self.mate_pair_align)
+        second = next(self.mate_pair_align) 
+        
+        assert self.mate_pair_align.get_mate_pair(first) == second
+
+        with pytest.raises(sr_sam.UnpairedReadError):
+            self.mate_pair_align.get_mate_pair(self.single_read)
+
+        with pytest.raises(StopIteration):
+            next(self.mate_pair_align)
 
 
 class FeatureTestSetup(AlignmentTestSetup):
