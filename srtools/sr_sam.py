@@ -356,9 +356,6 @@ def expressed_loci(reads):
     bounds = (0, 0)
 
     for read in reads:
-        print("range:  ", read.get_covered_range())
-        print("bounds: ", bounds)
-        print("---")
         if locus and not in_bounds(read, bounds):
             yield locus
             locus = []
