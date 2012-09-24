@@ -134,6 +134,32 @@ class Alignment(object):
         """
         self.stream = self.read_generator()
 
+    def get_mate_pair(self, read):
+        """Returns the mate pair of the read, raising an UnpairedReadError
+        if there isn't one.
+            
+        """
+        if not read.flag & 1:
+            raise UnpairedReadError
+
+        if read.rnext == "=":
+            target_rname = read.rname
+        else:
+            target_rname = read.rnext
+
+        target_pos = read.pnext
+
+        new_connection = SamAlignment(self.data_file)
+
+        for c_read in new_connection:   #c_read = candidate read
+            if c_read.rname == target_rname and c_read.pos == target_pos:
+                mate_pair = c_read
+                break
+        else:
+            raise UnpairedReadError
+
+        return mate_pair
+
 
 class SamAlignment(Alignment):
     """A stream of reads from a sam file."""
@@ -159,29 +185,6 @@ class SamAlignment(Alignment):
             for line in f:
                 if line and not line.startswith("@"):
                     yield parse_sam_read(line)
-
-    def get_mate_pair(self, read):
-        """Returns the mate pair of the read, raising an UnpairedReadError
-        if there isn't one.
-            
-        """
-        if read.rnext == "=":
-            target_rname = read.rname
-        else:
-            target_rname = read.rnext
-
-        target_pos = read.pnext
-
-        new_connection = SamAlignment(self.data_file)
-
-        for c_read in new_connection:   #c_read = candidate read
-            if c_read.rname == target_rname and c_read.pos == target_pos:
-                mate_pair = c_read
-                break
-        else:
-            raise UnpairedReadError
-
-        return mate_pair
 
 
 def parse_sam_read(string):
