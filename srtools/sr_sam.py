@@ -57,6 +57,20 @@ class Read(object):
         last_base = self.pos + sum([i for i, o in self.cigar if o == "M"]) - 1
         return (first_base, last_base)
 
+    def has_mate_pair(read):
+        """Returns true if the read has a mate pair in the alignment according
+        to the bitflag, rnext, and pnext fields.
+
+        """
+        flag_set = read.flag & 3 == 3       # Returns True if first two 
+                                            # bitflags are set (i.e., if the
+                                            # read is paired and mapped in its
+                                            # proper pair).
+        pnext_set = read.pnext != 0
+        rnext_set = read.rnext != '*'
+
+        return flag_set and pnext_set and rnext_set
+
 
 class Cigar(object):
     """A cigar, as used in SAM-format short reads."""
@@ -195,20 +209,6 @@ def parse_sam_read(string):
                 fields[10], tags=fields[11:])
 
 
-def has_mate_pair(read):
-    """Returns true if the read has a mate pair in the alignment according to
-    the bitflag, rnext, and pnext fields.
-
-    """
-    flag_set = bool(read.flag & 3 == 3) # Returns True if first two bitflags
-                                        # are set (i.e., if the read is paired
-                                        # and mapped in its propper pair).
-    pnext_set = bool(read.pnext != 0)
-    rnext_set = bool(read.rnext != '*')
-
-    return flag_set and pnext_set and rnext_set
-
-
 def convert_indecies(cigar):
     """Converts a cigar from (n, operator) format to (index, n, operator).
     The index is the zero-based position of the operator, and n is its length.
@@ -336,16 +336,35 @@ def overlaps(read1, read2):
     x0, x1 = read1.get_covered_range()
     y0, y1 = read2.get_covered_range()
 
-    return x0 <= y0 <= x1 or y0 <= y1 <= x1
+    return x0 <= y0 <= x1 or y0 <= x0 <= y1
+
+
+def in_bounds(read, bounds):
+    """Returns True if the covered range of the read is within the bounds.
+    Helper function for expressed_loci.
+
+    """
+    x0, x1 = read.get_covered_range()
+    y0, y1 = bounds
+
+    return x0 <= y0 <= x1 or y0 <= x0 <= y1
 
 
 def expressed_loci(reads):
     """Returns a generator object which yields lists of overlapping reads"""
     locus = []
+    bounds = (0, 0)
+
     for read in reads:
-        if not locus or overlaps(locus[-1], read):
-            locus.append(read)
-        else:
+        print("range:  ", read.get_covered_range())
+        print("bounds: ", bounds)
+        print("---")
+        if locus and not in_bounds(read, bounds):
             yield locus
-            locus = [read]
+            locus = []
+        locus.append(read)
+
+        first_base, last_base = coverage(locus)
+        bounds = (first_base, max(last_base, read.pnext))
+
     yield locus

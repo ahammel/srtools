@@ -54,7 +54,12 @@ class ReadTestSetup(object):
 
     expressed_locus_alignment = sr_sam.SamAlignment("test/test_data/test_expressed_locus.sam")
 
-    mate_pair_align= sr_sam.SamAlignment("test/test_data/test_mate_pair.sam")
+    mate_pair_align = sr_sam.SamAlignment("test/test_data/test_mate_pair.sam")
+
+    mate_pair_consensus = ("AATGCGAGTGGAAAATGGCTGAAGACTCGATCAAGATACCTCCATCCAC"
+                           "CAACACGGTGAAGCAGAGCTGGATTG" + "N" * 36 + "AGAATGCA"
+                           "CAGTGGAACTATCTCAAGAACATGATCATTGGTGTCTTGTTGTTCATCT"
+                           "CCGTCATTAGTTGGATCATA")
 
     
 class TestReadMethods(ReadTestSetup):
@@ -91,6 +96,11 @@ class TestReadMethods(ReadTestSetup):
         assert test_reads[2].get_covered_range() == (13, 17)
         assert test_reads[3].get_covered_range() == (14, 18)
 
+    def test_has_mate_pair(self):
+        assert not self.single_read.has_mate_pair()
+        for read in self.mate_pair_align:
+            assert read.has_mate_pair()
+
 
 class TestReadFunctions(ReadTestSetup):
     """Tests of the functions associated with the Read class."""
@@ -108,6 +118,11 @@ class TestReadFunctions(ReadTestSetup):
 
         assert sr_sam.consensus(self.reverse_complement_align) == \
                                                                 "AAAGGGAAAA"
+
+        self.mate_pair_align.rewind()
+        mate_pair_loci = sr_sam.expressed_loci(self.mate_pair_align)
+        con = sr_sam.consensus(next(mate_pair_loci))
+        assert con == self.mate_pair_consensus
 
     def test_dot_indels(self):
         self.indel_algn.rewind()
@@ -168,11 +183,6 @@ class TestReadFunctions(ReadTestSetup):
                      ("CAATTA", [(1, "I"), (4, "M")], 2)]
         assert sr_sam.make_dot_queue(hard_read, hard_list) == \
                 [(3, 2), (1, 1)]
-
-    def test_has_mate_pair(self):
-        assert not sr_sam.has_mate_pair(self.single_read)
-        for read in self.mate_pair_align:
-            assert sr_sam.has_mate_pair(read)
 
 
 class CigarTestSetup(object):
