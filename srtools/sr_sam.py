@@ -359,9 +359,13 @@ def expressed_loci(reads):
         if locus and not in_bounds(read, bounds):
             yield locus
             locus = []
+            bounds = (0, 0)
         locus.append(read)
 
-        first_base, last_base = coverage(locus)
-        bounds = (first_base, max(last_base, read.pnext))
+        b0, b1 = bounds
+        r0, r1 = read.get_covered_range()
+        p1 = read.pnext
+
+        bounds = (min([x for x in [b0, r0] if x != 0]), max(b1, r1, p1))
 
     yield locus

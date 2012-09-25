@@ -46,15 +46,15 @@ class ReadTestSetup(object):
 
     single_read_alignment = sr_sam.SamAlignment("single_read_test.sam") 
 
-    indel_algn = sr_sam.SamAlignment("./test/test_data/test_indel.sam")
+    indel_algn = sr_sam.SamAlignment("/home/alex/repos/py-srtools/srtools/test/test_data/test_indel.sam")
 
-    reverse_complement_align = sr_sam.SamAlignment("test/test_data/test_rc_consensus.sam")
+    reverse_complement_align = sr_sam.SamAlignment("/home/alex/repos/py-srtools/srtools/test/test_data/test_rc_consensus.sam")
     
-    reverse_complement_align_copy = sr_sam.SamAlignment("test/test_data/test_rc_consensus.sam")
+    reverse_complement_align_copy = sr_sam.SamAlignment("/home/alex/repos/py-srtools/srtools/test/test_data/test_rc_consensus.sam")
 
-    expressed_locus_alignment = sr_sam.SamAlignment("test/test_data/test_expressed_locus.sam")
+    expressed_locus_alignment = sr_sam.SamAlignment("/home/alex/repos/py-srtools/srtools/test/test_data/test_expressed_locus.sam")
 
-    mate_pair_align = sr_sam.SamAlignment("test/test_data/test_mate_pair.sam")
+    mate_pair_align = sr_sam.SamAlignment("/home/alex/repos/py-srtools/srtools/test/test_data/test_mate_pair.sam")
 
     mate_pair_consensus = ("AATGCGAGTGGAAAATGGCTGAAGACTCGATCAAGATACCTCCATCCAC"
                            "CAACACGGTGAAGCAGAGCTGGATTG" + "N" * 36 + "AGAATGCA"
@@ -139,7 +139,7 @@ class TestReadFunctions(ReadTestSetup):
 
     def test_overlaps(self):
         read1, read2, read3, read4 = \
-            list(sr_sam.SamAlignment("test/test_data/test_overlap.sam"))
+            list(sr_sam.SamAlignment("/home/alex/repos/py-srtools/srtools/test/test_data/test_overlap.sam"))
         assert not sr_sam.overlaps(read1, read2)
         assert sr_sam.overlaps(read1, read3)
         assert not sr_sam.overlaps(read1, read4)
@@ -198,7 +198,7 @@ class TestCigarMethods(CigarTestSetup):
 
 
 class SequenceTestSetup(object):
-    fasta_reads = sr_seq.read_fasta("test/test_data/fasta.fa")
+    fasta_reads = sr_seq.read_fasta("/home/alex/repos/py-srtools/srtools/test/test_data/fasta.fa")
 
 class TestSequenceFunctions(SequenceTestSetup):
     def test_reverse_complement(self):
@@ -261,7 +261,7 @@ class AlignmentTestSetup(ReadTestSetup):
 
 class TestAlignmentMethods(AlignmentTestSetup):
     def test_str(self):
-        for test_file in glob.glob("test/test_data/*.sam"):
+        for test_file in glob.glob("/home/alex/repos/py-srtools/srtools/test/test_data/*.sam"):
             test_algn = sr_sam.SamAlignment(test_file)
             with open("tmp.sam", "w") as f:
                 print(test_algn, file=f)
@@ -326,7 +326,7 @@ class FeatureTestSetup(AlignmentTestSetup):
                                             "30427671\t.\t.\t.\tID=Chr1;"
                                             "Name=Chr1")
 
-    test_annotation = sr_gff.read_gff("test/test_data/test.gff")
+    test_annotation = sr_gff.read_gff("/home/alex/repos/py-srtools/srtools/test/test_data/test.gff")
 
 
 class TestFeatureFunctions(FeatureTestSetup):
@@ -374,7 +374,7 @@ class TestGenomeAnnotationFunctions(FeatureTestSetup):
     def test_in_features(self):
         self.expressed_locus_alignment.rewind()
         alignment = self.expressed_locus_alignment
-        annotation = sr_gff.read_gff("test/test_data/test.gff")
+        annotation = sr_gff.read_gff("/home/alex/repos/py-srtools/srtools/test/test_data/test.gff")
         genes = annotation.filter_features(lambda x: x.f_type == "gene")
         locus_gen = sr_sam.expressed_loci(alignment)
         group1 = next(locus_gen)
@@ -384,14 +384,13 @@ class TestGenomeAnnotationFunctions(FeatureTestSetup):
 
 
 class TestORFFunctions():
-    reads = sr_seq.read_fasta("test/test_data/fasta.fa")
+    reads = sr_seq.read_fasta("/home/alex/repos/py-srtools/srtools/test/test_data/fasta.fa")
 
 
 def test_summary_statistics():
-    sr_stats.print_summary_statistics("test/test_data/speed_test.sam",
-                                     output_file="test_summary.txt")
+    sr_stats.print_summary_statistics("/home/alex/repos/py-srtools/srtools/test/test_data/speed_test.sam", output_file="test_summary.txt")
     test_file = open("test_summary.txt")
-    known_file = open("test/test_data/david_summary.txt")
+    known_file = open("/home/alex/repos/py-srtools/srtools/test/test_data/david_summary.txt")
     test_lines = test_file.readlines()
     known_lines = known_file.readlines()
     for line in test_lines:
@@ -404,11 +403,14 @@ def test_summary_statistics():
 
 
 def test_speed_test():
-   align = sr_sam.SamAlignment("test/test_data/speed_test.sam")
-   annotation = sr_gff.read_gff("test/test_data/speed_test.gff")
+   align = sr_sam.SamAlignment("/home/alex/repos/py-srtools/srtools/test/test_data/speed_test.sam")
+   annotation = sr_gff.read_gff("/home/alex/repos/py-srtools/srtools/test/test_data/speed_test.gff")
    for locus in sr_sam.expressed_loci(align):
         sr_gff.in_features(locus, annotation.features)
         sr_sam.consensus(locus)
 
 def test_tear_down():
     os.remove("single_read_test.sam")
+
+if __name__ == '__main__':
+    test_speed_test()

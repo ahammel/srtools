@@ -1,6 +1,6 @@
 import random
 import itertools
-import sr_sam
+from srtools import sr_sam
 
 class NullSequenceError(ValueError):
     """The exception raised when attempting to illegally manipulate a null

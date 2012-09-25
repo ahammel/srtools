@@ -1,4 +1,4 @@
-import sr_sam
+from srtools import sr_sam
 
 class Feature(object):
     """A GFF genomic feature."""
