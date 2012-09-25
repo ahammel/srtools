@@ -307,18 +307,26 @@ class TestAlignmentMethods(AlignmentTestSetup):
         assert group2[0].qname == "SRR360147.2"
         assert group2[1].qname == "SRR360147.4"
 
-    def test_get_mate_pair(self):
+    def test_mate_pairs(self):
         self.mate_pair_align.rewind()
         first = next(self.mate_pair_align)
-        second = next(self.mate_pair_align) 
-        
-        assert self.mate_pair_align.get_mate_pair(first) == second
+        second = next(self.mate_pair_align)
 
-        with pytest.raises(sam.UnpairedReadError):
-            self.mate_pair_align.get_mate_pair(self.single_read)
+        self.mate_pair_align.rewind()
+        pairs = self.mate_pair_align.mate_pairs()
+
+        pair = next(pairs)
+        assert pair[0] == first
+        assert pair[1] == second
 
         with pytest.raises(StopIteration):
-            next(self.mate_pair_align)
+            next(pairs)
+
+        self.single_read_alignment.rewind()
+        pairs = self.single_read_alignment.mate_pairs()
+
+        with pytest.raises(StopIteration):
+            next(pairs)
 
 
 class FeatureTestSetup(AlignmentTestSetup):

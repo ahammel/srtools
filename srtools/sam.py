@@ -29,7 +29,10 @@ class Read(object):
         self.pos = int(pos)
         self.mapq = int(mapq)
         self.cigar = Cigar(cigar)
-        self.rnext = str(rnext)
+        if rnext == "=":
+            self.rnext = self.rname
+        else:
+            self.rnext = str(rnext)
         self.pnext = int(pnext)
         self.tlen = int(tlen)
         self.seq = str(seq)
@@ -141,38 +144,29 @@ class Alignment(object):
         while True:
             yield self.filter_consecutive_reads(function)
 
+    def mate_pairs(self):
+        """Returns a mate pair generator, which yields mated pairs of reads.
+        Calling this method on an unpaired alignment will return an empty
+        generator.
+
+        """
+        unpaired_reads = {}
+        
+        for read in self:
+            try:
+                mate_pair = unpaired_reads[(read.rname, read.pos)]
+                yield (mate_pair, read)
+                del unpaired_reads[(read.rname, read.pos)]
+            except KeyError:
+                if read.has_mate_pair():
+                    unpaired_reads[(read.rnext, read.pnext)] = read
+
     def rewind(self):
         """Calls the read_generator method, thereby reseting the stream of
         reads.
 
         """
         self.stream = self.read_generator()
-
-    def get_mate_pair(self, read):
-        """Returns the mate pair of the read, raising an UnpairedReadError
-        if there isn't one.
-            
-        """
-        if not read.flag & 1:
-            raise UnpairedReadError
-
-        if read.rnext == "=":
-            target_rname = read.rname
-        else:
-            target_rname = read.rnext
-
-        target_pos = read.pnext
-
-        new_connection = SamAlignment(self.data_file)
-
-        for c_read in new_connection:   #c_read = candidate read
-            if c_read.rname == target_rname and c_read.pos == target_pos:
-                mate_pair = c_read
-                break
-        else:
-            raise UnpairedReadError
-
-        return mate_pair
 
 
 class SamAlignment(Alignment):
