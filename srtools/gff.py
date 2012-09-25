@@ -1,4 +1,4 @@
-from srtools import sr_sam
+from srtools import sam
 
 class Feature(object):
     """A GFF genomic feature."""
@@ -91,7 +91,7 @@ def in_features(reads, features):
 
     """
     overlap = False
-    r0, r1 = sr_sam.coverage(reads)
+    r0, r1 = sam.coverage(reads)
     for f in features:
         if f.start <= r0 <= f.end or f.start <= r1 <= f.end:
             overlap = True

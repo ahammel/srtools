@@ -1,15 +1,15 @@
-from srtools import sr_sam, sr_postgres
+from srtools import sam, postgres
 import pytest
 
 
 class PostgresAlignmentTestSetup(object):
-    sam_alignment = sr_sam.SamAlignment("/home/alex/repos/py-srtools/srtools/test/test_data/test_insertion.sam")
+    sam_alignment = sam.SamAlignment("/home/alex/repos/py-srtools/srtools/test/test_data/test_insertion.sam")
 
     pq = "postgres@localhost/test_alignment"
 
-    sr_postgres.postgres_dump(sam_alignment, pq)
+    postgres.postgres_dump(sam_alignment, pq)
 
-    postgres_alignment = sr_postgres.PostgresAlignment(pq)
+    postgres_alignment = postgres.PostgresAlignment(pq)
 
 
 class TestPostgresAlignmentMethods(PostgresAlignmentTestSetup):
