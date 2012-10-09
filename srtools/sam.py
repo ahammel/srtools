@@ -270,12 +270,16 @@ def majority(nucleotides, cutoff=0.5):
     them. If there is no majority above the cutoff fraction, returns "N".
 
     """
-    for i in nucleotides:
-        if nucleotides.count(i) / len(nucleotides) > cutoff:
-            consensus = i
+    nuc_set = set(nucleotides)
+    nucleotide_counts = {x: nucleotides.count(x) for x in nuc_set}
+
+    for x in nucleotide_counts:
+        if nucleotide_counts[x] / len(nucleotides) > cutoff:
+            consensus = x
             break
     else:
         consensus = "N"
+    
     return consensus
 
 
@@ -295,10 +299,10 @@ def consensus(reads, cutoff=0.5):
 
     consensus_sequence = []
     for position in range(min(all_nucleotides), max(all_nucleotides) + 1):
-        try:
+        if position in all_nucleotides:
             n = majority(all_nucleotides[position], cutoff=cutoff)
             consensus_sequence.append(n)
-        except KeyError:
+        else:
             consensus_sequence.append("N")
     consensus = "".join(consensus_sequence)
     return consensus.replace('.', '')
@@ -322,15 +326,19 @@ def coverage(reads):
     return (first, last)
 
 
+def tuple_intersection(tuple1, tuple2):
+    x0, x1 = tuple1
+    y0, y1 = tuple2
+    return x0 <= y0 <= x1 or y0 <= x0 <= y1
+
+
 def overlaps(read1, read2):
     """Returns True if the two reads cover at least one base in common and
     False otherwise.
 
     """
-    x0, x1 = read1.get_covered_range()
-    y0, y1 = read2.get_covered_range()
-
-    return x0 <= y0 <= x1 or y0 <= x0 <= y1
+    return tuple_intersection(read1.get_covered_range(), 
+                              read2.get_covered_range())
 
 
 def in_bounds(read, bounds):
@@ -338,14 +346,13 @@ def in_bounds(read, bounds):
     Helper function for expressed_loci.
 
     """
-    x0, x1 = read.get_covered_range()
-    y0, y1 = bounds
-
-    return x0 <= y0 <= x1 or y0 <= x0 <= y1
+    return tuple_intersection(read.get_covered_range(), bounds)
 
 
 def expressed_loci(reads):
-    """Returns a generator object which yields lists of overlapping reads"""
+    """Returns a generator object which yields lists of overlapping reads.
+    
+    """
     locus = []
     bounds = (0, 0)
 
