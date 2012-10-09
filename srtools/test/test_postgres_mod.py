@@ -1,5 +1,9 @@
 from srtools import sam, postgres
-import pytest
+
+try:
+    import pytest
+except ImportError:
+    import nose as pytest
 
 
 class PostgresAlignmentTestSetup(object):

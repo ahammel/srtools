@@ -1,4 +1,7 @@
-import pytest
+try:
+    import pytest
+except ImportError:
+    import nose as pytest
 from srtools import sam, stats, seq, gff
 import os
 import glob
