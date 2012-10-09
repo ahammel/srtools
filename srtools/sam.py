@@ -144,23 +144,6 @@ class Alignment(object):
         while True:
             yield self.filter_consecutive_reads(function)
 
-    def mate_pairs(self):
-        """Returns a mate pair generator, which yields mated pairs of reads.
-        Calling this method on an unpaired alignment will return an empty
-        generator.
-
-        """
-        unpaired_reads = {}
-        
-        for read in self:
-            try:
-                mate_pair = unpaired_reads[(read.rname, read.pos)]
-                yield (mate_pair, read)
-                del unpaired_reads[(read.rname, read.pos)]
-            except KeyError:
-                if read.has_mate_pair():
-                    unpaired_reads[(read.rnext, read.pnext)] = read
-
     def rewind(self):
         """Calls the read_generator method, thereby reseting the stream of
         reads.
@@ -193,6 +176,23 @@ class SamAlignment(Alignment):
             for line in f:
                 if line and not line.startswith("@"):
                     yield parse_sam_read(line)
+
+    def mate_pairs(self):
+        """Returns a mate pair generator, which yields mated pairs of reads.
+        Calling this method on an unpaired alignment will return an empty
+        generator.
+
+        """
+        unpaired_reads = {}
+        
+        for read in self:
+            try:
+                mate_pair = unpaired_reads[(read.rname, read.pos)]
+                yield (mate_pair, read)
+                del unpaired_reads[(read.rname, read.pos)]
+            except KeyError:
+                if read.has_mate_pair():
+                    unpaired_reads[(read.rnext, read.pnext)] = read
 
 
 def parse_sam_read(string):
