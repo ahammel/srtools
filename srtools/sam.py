@@ -151,6 +151,9 @@ class Alignment(object):
         """
         self.stream = self.read_generator()
 
+    def read_generator(self):
+        raise NotImplementedError("Child class must provide read_generator!")
+
 
 class SamAlignment(Alignment):
     """A stream of reads from a sam file."""
