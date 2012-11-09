@@ -1,4 +1,7 @@
-import re
+"""Methods and functions for manipulating SAM files and reads in that data format.
+
+"""
+import re 
 
 
 class UnmappedReadError(ValueError):
@@ -21,23 +24,25 @@ class UnpairedReadError(ValueError):
 class Read(object):
     """A sam-format sequence read."""
 
-    def __init__(self, qname, flag, rname, pos, mapq, cigar, rnext, pnext,
-                 tlen, seq, qual, tags=[]):
-        self.qname = str(qname)
-        self.flag = int(flag)
-        self.rname = str(rname)
-        self.pos = int(pos)
-        self.mapq = int(mapq)
-        self.cigar = Cigar(cigar)
-        if rnext == "=":
+    #def __init__(self, qname, flag, rname, pos, mapq, cigar, rnext, pnext,
+                 #tlen, seq, qual, tags=[]):
+    def __init__(self, read_string):
+        fields = read_string.strip().split()
+        self.qname = str(fields[0])
+        self.flag = int(fields[1])
+        self.rname = str(fields[2])
+        self.pos = int(fields[3])
+        self.mapq = int(fields[4])
+        self.cigar = Cigar(fields[5])
+        if fields[6] == "=":
             self.rnext = self.rname
         else:
-            self.rnext = str(rnext)
-        self.pnext = int(pnext)
-        self.tlen = int(tlen)
-        self.seq = str(seq)
-        self.qual = str(qual)
-        self.tags = [str(x) for x in tags]
+            self.rnext = str(fields[6])
+        self.pnext = int(fields[7])
+        self.tlen = int(fields[8])
+        self.seq = str(fields[9])
+        self.qual = str(fields[10])
+        self.tags = fields[11:]
 
     def __eq__(self, other):
         return str(self) == str(other)
@@ -60,17 +65,17 @@ class Read(object):
         last_base = self.pos + sum([i for i, o in self.cigar if o == "M"]) - 1
         return (first_base, last_base)
 
-    def has_mate_pair(read):
+    def has_mate_pair(self):
         """Returns true if the read has a mate pair in the alignment according
         to the bitflag, rnext, and pnext fields.
 
         """
-        flag_set = read.flag & 3 == 3       # Returns True if first two 
+        flag_set = self.flag & 3 == 3       # Returns True if first two 
                                             # bitflags are set (i.e., if the
                                             # read is paired and mapped in its
                                             # proper pair).
-        pnext_set = read.pnext != 0
-        rnext_set = read.rnext != '*'
+        pnext_set = self.pnext != 0
+        rnext_set = self.rnext != '*'
 
         return flag_set and pnext_set and rnext_set
 
@@ -101,6 +106,22 @@ class Cigar(object):
     def __ne__(self, other):
         return self.elements != other.elements
 
+    def read_length(self):
+        """The total number of bases in the read, measured as the sum of the
+        lengths of the cigar elements.
+
+        """
+        return sum([length for (length, operation) in self.elements
+                    if operation in "MIS=X"])
+
+    def aligned_length(self):
+        """The sum of the lengths of all the operations which align to the
+        reference sequence, not including clipped sequences.
+
+        """
+        return sum([length for (length, operation) in self.elements
+                    if operation in "M=X"])
+
 
 class Alignment(object):
     """A sam-format sequence alignment"""
@@ -119,9 +140,9 @@ class Alignment(object):
         value.
 
         """
-        for r in self:
-            if function(r):
-                yield r
+        for read in self:
+            if function(read):
+                yield read
 
     def filter_consecutive_reads(self, function):
         """Returns a generator of consecutive reads where function(read)
@@ -152,6 +173,10 @@ class Alignment(object):
         self.stream = self.read_generator()
 
     def read_generator(self):
+        """A generator which yields the reads in the alignment. Must be
+        provided by the child class.
+
+        """
         raise NotImplementedError("Child class must provide read_generator!")
 
 
@@ -165,6 +190,9 @@ class SamAlignment(Alignment):
         return headstr + "\n".join(readlines)
 
     def head(self):
+        """The head data in the SAM file.
+
+        """
         headlines = []
         with open(self.data_file) as f:
             for line in f:
@@ -175,10 +203,13 @@ class SamAlignment(Alignment):
         return "".join(headlines)
 
     def read_generator(self):
+        """Yields a Read object for every non-comment line in a SAM file.
+
+        """
         with open(self.data_file) as f:
             for line in f:
                 if line and not line.startswith("@"):
-                    yield parse_sam_read(line)
+                    yield Read(line)
 
     def mate_pairs(self):
         """Returns a mate pair generator, which yields mated pairs of reads.
@@ -196,14 +227,6 @@ class SamAlignment(Alignment):
             except KeyError:
                 if read.has_mate_pair():
                     unpaired_reads[(read.rnext, read.pnext)] = read
-
-
-def parse_sam_read(string):
-    """Takes a string in SAMfile format and returns a Read object."""
-    fields = string.strip().split()
-    return Read(fields[0], fields[1], fields[2], fields[3], fields[4],
-                fields[5], fields[6], fields[7], fields[8], fields[9],
-                fields[10], tags=fields[11:])
 
 
 def convert_indecies(cigar):

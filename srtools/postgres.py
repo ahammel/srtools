@@ -1,34 +1,28 @@
-from srtools import sam
+"""Tools to convert a SAM file to and from a Postgresql database. Mostly to
+demonstrate how sam.Alignment inheritance works
+
+"""
+from srtools import Alignment
+from srtools.sam import Read
 import postgresql
 
 
-class PostgresAlignment(sam.Alignment):
+class PostgresAlignment(Alignment):
     """An illumina alignment using data stored as a postgres database. The data
     file is a pg locator for the db.
 
     """
     def read_generator(self):
-        with postgresql.open(self.data_file) as db:
+        with postgresql.open(self.data_file) as database:
             command = "SELECT * FROM reads ORDER BY id;"
-            rows = db.prepare(command)
+            rows = database.prepare(command)
             for row in rows:
-                yield parse_postgres_read(row)
+                yield Read("\t".join(str(field) for field in row[1:]))
 
     def head(self):
         with postgresql.open(self.data_file) as db:
             head_tuple = next(iter(db.prepare("SELECT * FROM head;")))
             return head_tuple[0]
-
-
-def parse_postgres_read(row):
-    """Returns a read object from a postgres read database row."""
-    qname, flag, rname, pos, mapq,\
-        cigar, rnext, pnext, tlen, seq, qual = row[1:12]
-
-    tags = row[-1].split()
-
-    return sam.Read(qname, flag, rname, pos, mapq, cigar, rnext, pnext,
-                        tlen, seq, qual, tags)
 
 
 def sql_insert_command(read, table_name, id_number):
@@ -52,12 +46,12 @@ def sql_insert_command(read, table_name, id_number):
 
     field_list = []
     value_list = []
-    for f, v in values:
-        field_list.append(f)
-        if isinstance(v, int):
-            value_list.append(str(v))
+    for field, value in values:
+        field_list.append(field)
+        if isinstance(value, int):
+            value_list.append(str(value))
         else:
-            value_list.append("'" + str(v) + "'")
+            value_list.append("'" + str(value) + "'")
 
     field_list.append("tags")
     value_list.append("'" + " ".join([str(x) for x in read.tags]) + "'")
@@ -76,9 +70,9 @@ def sql_insert_command(read, table_name, id_number):
 
 def postgres_dump(alignment, pq_locator):
     """Dumps an alignment of SAM reads into a Postgres database"""
-    with postgresql.open(pq_locator) as db:
-        db.execute("DROP TABLE IF EXISTS reads;")
-        db.execute("CREATE TABLE reads ( "
+    with postgresql.open(pq_locator) as database:
+        database.execute("DROP TABLE IF EXISTS reads;")
+        database.execute("CREATE TABLE reads ( "
                    "id          int, "
                    "qname       varchar(80), "
                    "flag        int, "
@@ -97,13 +91,13 @@ def postgres_dump(alignment, pq_locator):
         id_number = 1
         for read in alignment:
             command = sql_insert_command(read, "reads", id_number)
-            db.execute(command)
+            database.execute(command)
             id_number += 1
 
-        db.execute("DROP TABLE IF EXISTS head;"
+        database.execute("DROP TABLE IF EXISTS head;"
                    "CREATE TABLE head (head  text);")
 
         head_command = "INSERT INTO head (head) VALUES ('"
         head_command += alignment.head()
         head_command += "');"
-        db.execute(head_command)
+        database.execute(head_command)

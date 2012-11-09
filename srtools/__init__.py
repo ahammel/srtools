@@ -1,3 +1,6 @@
+"""Tools for manipulating short-read genetic data.
+
+"""
 from srtools import sam
 
 Alignment = sam.Alignment

@@ -1,6 +1,10 @@
+"""Tools for manipulating the sequences of short-read data.
+
+Most of this is probably covered by BioPython, which should be folded in.
+
+"""
 import random
 import itertools
-from srtools import sam
 
 class NullSequenceError(ValueError):
     """The exception raised when attempting to illegally manipulate a null
@@ -31,6 +35,9 @@ def read_fasta(fasta_file):
 
 
 def reverse_complement(sequence):
+    """Retruns the reverse complement of a sequence.
+
+    """
     rc = []
     seq = list(sequence)
     while seq:

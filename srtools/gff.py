@@ -1,18 +1,32 @@
+"""Tools for reading and manipulating General Feature Format files and for 
+comparing SAM reads aligned to the relevant reference genome.
+
+"""
 from srtools import sam
 
 class Feature(object):
     """A GFF genomic feature."""
-    def __init__(self, sequence, source, f_type, start, end, score,
-                 strand, frame, attribute):
-        self.sequence = str(sequence)
-        self.source = str(source)
-        self.f_type = str(f_type)
-        self.start = int(start)
-        self.end = int(end)
-        self.score = score
-        self.strand = strand
-        self.frame = frame
-        self.attribute = attribute
+    def __init__(self, feature_string):
+        fields = feature_string.strip().split("\t")
+
+        while True:
+            try:
+                fields[fields.index('.')] = None
+            except ValueError:
+                break
+
+        self.sequence = fields[0]
+        self.source = fields[1]
+        self.f_type = fields[2]
+        self.start = int(fields[3])
+        self.end = int(fields[4])
+        if fields[5]:
+            self.score = float(fields[5])
+        else:
+            self.score = fields[5]
+        self.strand = fields[6]
+        self.frame = fields[7]
+        self.attribute = fields[8]
 
 
 class GenomeAnnotation(object):
@@ -43,33 +57,6 @@ class GenomeAnnotation(object):
         yield collection
 
 
-def parse_gff_feature(feature_string):
-    """Creates a Feature object from a GFF feature string."""
-    fields = feature_string.strip().split("\t")
-
-    while True:
-        try:
-            fields[fields.index('.')] = None
-        except ValueError:
-            break
-
-    sequence = fields[0]
-    source = fields[1]
-    f_type = fields[2]
-    start = int(fields[3])
-    end = int(fields[4])
-    if fields[5]:
-        score = float(fields[5])
-    else:
-        score = fields[5]
-    strand = fields[6]
-    frame = fields[7]
-    attribute = fields[8]
-
-    return Feature(sequence, source, f_type, start, end, score, strand,
-                   frame, attribute)
-
-
 def read_gff(gff_file):
     """Creates a GenomeAnnotation object from a GFF file"""
     headlines = []
@@ -81,7 +68,7 @@ def read_gff(gff_file):
             elif line.startswith("#"):
                 pass
             else:
-                features.append(parse_gff_feature(line))
+                features.append(Feature(line))
     return GenomeAnnotation(head="".join(headlines), features=features)
 
 

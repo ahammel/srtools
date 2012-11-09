@@ -1,3 +1,6 @@
+"""Tools for examining samtools mpileup records.
+
+"""
 from srtools import Alignment
 
 class FormatError(ValueError):
