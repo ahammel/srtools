@@ -1,3 +1,6 @@
+"""Calculates and prints sumary statistics for SAM files.
+
+"""
 from srtools import sam, seq
 import sys
 from collections import Counter
@@ -78,7 +81,7 @@ def print_summary_statistics(input_file, output_file=sys.stdout):
 
     #Bitflags
     print("\n" + green("Total Counts of Bit Flags") + "...", file=f)
-    flags = sorted(stats["flags"], key=lambda x: str(x))
+    flags = sorted(stats["flags"], key=str)
     for flag in flags:
         freq = stats["flags"][flag]
         rel_freq = freq / stats["read_count"]

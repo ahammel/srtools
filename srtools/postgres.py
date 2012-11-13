@@ -20,6 +20,9 @@ class PostgresAlignment(Alignment):
                 yield Read("\t".join(str(field) for field in row[1:]))
 
     def head(self):
+        """The commented data normally found in the head of a SAM file.
+
+        """
         with postgresql.open(self.data_file) as db:
             head_tuple = next(iter(db.prepare("SELECT * FROM head;")))
             return head_tuple[0]

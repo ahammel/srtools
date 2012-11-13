@@ -1,4 +1,5 @@
-"""Methods and functions for manipulating SAM files and reads in that data format.
+"""Methods and functions for manipulating SAM files and reads in that data 
+format.
 
 """
 import re 
@@ -24,8 +25,6 @@ class UnpairedReadError(ValueError):
 class Read(object):
     """A sam-format sequence read."""
 
-    #def __init__(self, qname, flag, rname, pos, mapq, cigar, rnext, pnext,
-                 #tlen, seq, qual, tags=[]):
     def __init__(self, read_string):
         fields = read_string.strip().split()
         self.qname = str(fields[0])
@@ -249,7 +248,7 @@ def make_dot_queue(stripped_read, stripped_read_list):
 
     """
     queue = []
-    s_seq, s_cigar, s_pos = stripped_read
+    s_seq, _, s_pos = stripped_read
     for read in stripped_read_list:
         seq, cigar, pos = read
         c_cigar = convert_indecies(cigar)
@@ -267,7 +266,7 @@ def dot_from_queue(stripped_read, queue):
     position.Helper function for dot_indels.
 
     """
-    seq, cigar, pos = stripped_read
+    seq, _, _ = stripped_read
     for i, n in queue:
         seq = seq[:i] + ('.' * n) + seq[i:]
     return seq
@@ -299,21 +298,21 @@ def majority(nucleotides, cutoff=0.5):
     nuc_set = set(nucleotides)
     nucleotide_counts = {x: nucleotides.count(x) for x in nuc_set}
 
-    for x in nucleotide_counts:
-        if nucleotide_counts[x] / len(nucleotides) > cutoff:
-            consensus = x
+    for i in nucleotide_counts:
+        if nucleotide_counts[i] / len(nucleotides) > cutoff:
+            consensus_nucleotide = i
             break
     else:
-        consensus = "N"
+        consensus_nucleotide = "N"
     
-    return consensus
+    return consensus_nucleotide
 
 
 def consensus(reads, cutoff=0.5):
     """Returns the consensus sequence of a collection of reads."""
     all_nucleotides = {}
     for read in dot_indels(reads):
-        seq, cigar, pos = read
+        seq, _, pos = read
         if pos == 0:
             raise UnmappedReadError
         else:
@@ -330,8 +329,8 @@ def consensus(reads, cutoff=0.5):
             consensus_sequence.append(n)
         else:
             consensus_sequence.append("N")
-    consensus = "".join(consensus_sequence)
-    return consensus.replace('.', '')
+    consensus_string = "".join(consensus_sequence)
+    return consensus_string.replace('.', '')
 
 
 def coverage(reads):
@@ -353,6 +352,14 @@ def coverage(reads):
 
 
 def tuple_intersection(tuple1, tuple2):
+    """Returns True if the tuples 'overlap', which is to say, if either of the
+    values in the first tuple falls within the range defined by the second
+    tuple. Ranges are defined inclusively for this function, eg:
+
+        tuple_intersection((1, 2), (2, 3)) -> True
+        tuple_intersection((1, 2), (3, 4)) -> False
+
+    """
     x0, x1 = tuple1
     y0, y1 = tuple2
     return x0 <= y0 <= x1 or y0 <= x0 <= y1

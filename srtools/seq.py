@@ -38,11 +38,11 @@ def reverse_complement(sequence):
     """Retruns the reverse complement of a sequence.
 
     """
-    rc = []
+    rev_comp = []
     seq = list(sequence)
     while seq:
-        rc.append(COMPLEMENT[seq.pop()])
-    return "".join(rc)
+        rev_comp.append(COMPLEMENT[seq.pop()])
+    return "".join(rev_comp)
 
 
 def gc_content(sequence):
