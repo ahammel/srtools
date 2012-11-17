@@ -43,17 +43,23 @@ class Read(object):
         self.qual = str(fields[10])
         self.tags = fields[11:]
 
-    def __eq__(self, other):
-        return str(self) == str(other)
-
-    def __ne__(self, other):
-        return not self == other
-
     def __str__(self):
         attrs = [self.qname, self.flag, self.rname, self.pos, self.mapq,
                  str(self.cigar), self.rnext, self.pnext,
                  self.tlen, self.seq, self.qual] + self.tags
         return "\t".join([str(x) for x in attrs])
+
+    def __key(self):
+        return (self.qname, self.pos)
+
+    def __eq__(self, other):
+        return self.__key() == other.__key()
+
+    def __ne__(self, other):
+        return not self == other
+
+    def __hash__(self):
+        return hash(self.__key())
 
     def get_covered_range(self):
         """Returns a tuple consisiting of the first and last position covered

@@ -58,5 +58,3 @@ class TestGenomeAnnotationFunctions(FeatureTestSetup):
         group2 = next(locus_gen)
         assert not gff.in_features(group1, genes)
         assert gff.in_features(group2, genes)
-
-
