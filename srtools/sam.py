@@ -49,17 +49,15 @@ class Read(object):
                  self.tlen, self.seq, self.qual] + self.tags
         return "\t".join([str(x) for x in attrs])
 
-    def __key(self):
-        return (self.qname, self.pos)
-
     def __eq__(self, other):
-        return self.__key() == other.__key()
+        return str(self) == str(other)
 
     def __ne__(self, other):
         return not self == other
 
     def __hash__(self):
-        return hash(self.__key())
+        return hash(str(self))  #TODO: this could be faster with a more
+                                #selective hash key
 
     def get_covered_range(self):
         """Returns a tuple consisiting of the first and last position covered

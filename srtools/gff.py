@@ -35,6 +35,13 @@ class GenomeAnnotation(object):
         self.head = head
         self.features = features
 
+    def __iter__(self):
+        return self
+
+    def __iter__(self):
+        for feature in self.features:
+            yield feature
+
     def filter_features(self, function):
         """Returns a list of features where function(feature) reutrns a truthy
         value.
