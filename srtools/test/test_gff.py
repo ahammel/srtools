@@ -7,7 +7,7 @@ class FeatureTestSetup(AlignmentTestSetup):
                                             "30427671\t.\t.\t.\tID=Chr1;"
                                             "Name=Chr1")
 
-    test_annotation = gff.read_gff(TEST_FOLDER + "/test_data/test.gff")
+    test_annotation = gff.GenomeAnnotation(TEST_FOLDER + "/test_data/test.gff")
 
 
 class TestFeatureMethods(FeatureTestSetup):
@@ -36,7 +36,7 @@ class TestGenomeAnnotationMethods(FeatureTestSetup):
 
 class TestGenomeAnnotationFunctions(FeatureTestSetup):
     def test_read_gff(self):
-        assert self.test_annotation.head == "## Header\n"
+        assert self.test_annotation.head() == "## Header\n"
         assert self.test_annotation.features[0].sequence == "Chr1"
         assert self.test_annotation.features[0].source == "TAIR9"
         assert self.test_annotation.features[0].f_type == "chromosome"
@@ -51,8 +51,7 @@ class TestGenomeAnnotationFunctions(FeatureTestSetup):
     def test_in_features(self):
         self.expressed_locus_alignment.rewind()
         alignment = self.expressed_locus_alignment
-        annotation = gff.read_gff(TEST_FOLDER + "/test_data/test.gff")
-        genes = annotation.filter_features(lambda x: x.f_type == "gene")
+        genes = self.test_annotation.filter_features(lambda x: x.f_type == "gene")
         locus_gen = sam.expressed_loci(alignment)
         group1 = next(locus_gen)
         group2 = next(locus_gen)

@@ -267,7 +267,7 @@ class TestAlignmentMethods(AlignmentTestSetup):
 
 def test_speed_test():
    align = sam.SamAlignment(TEST_FOLDER + "/test_data/speed_test.sam")
-   annotation = gff.read_gff(TEST_FOLDER + "/test_data/speed_test.gff")
+   annotation = gff.GenomeAnnotation(TEST_FOLDER + "/test_data/speed_test.gff")
    for locus in sam.expressed_loci(align):
         gff.in_features(locus, annotation.features)
         sam.consensus(locus)
