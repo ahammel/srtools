@@ -3,8 +3,7 @@ try:
     import pytest
 except ImportError:
     import nose as pytest
-
-TEST_FOLDER = "/home/alex/repos/py-srtools/srtools/test"
+from srtools.test import TEST_FOLDER
 
 class PileupTestSetup(object):
     test_pileup = pileup.Pileup(TEST_FOLDER + "/test_data/test.pileup")

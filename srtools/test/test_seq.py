@@ -1,7 +1,7 @@
 from srtools import seq
 import pytest
+from srtools.test import TEST_FOLDER
 
-TEST_FOLDER = "/home/alex/repos/py-srtools/srtools/test"
 
 class SequenceTestSetup(object):
     fasta_reads = seq.read_fasta(TEST_FOLDER + "/test_data/fasta.fa")
