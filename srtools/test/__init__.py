@@ -1,1 +1,1 @@
-TEST_FOLDER = "/home/alex/repos/py-srtools/srtools/test"
+TEST_FOLDER = "/home/alex/repos/Srtools/srtools/test"

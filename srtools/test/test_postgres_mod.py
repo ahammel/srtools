@@ -5,9 +5,11 @@ try:
 except ImportError:
     import nose as pytest
 
+from srtools.test import TEST_FOLDER
+
 
 class PostgresAlignmentTestSetup(object):
-    sam_alignment = sam.SamAlignment("/home/alex/repos/py-srtools/srtools/test/test_data/test_insertion.sam")
+    sam_alignment = sam.SamAlignment(TEST_FOLDER + "/test_data/test_insertion.sam")
 
     pq = "postgres@localhost/test_alignment"
 

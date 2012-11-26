@@ -31,16 +31,20 @@ class Feature(object):
 
 class GenomeAnnotation(object):
     """A genome-spanning collection of Features"""
-    def __init__(self, head, features):
-        self.head = head
-        self.features = features
+    def __init__(self, gff_file):
+        self.data_file = gff_file
+        self.features = self.read_features()
 
     def __iter__(self):
-        return self
+        return iter(self.features)
 
-    def __iter__(self):
-        for feature in self.features:
-            yield feature
+    def read_features(self):
+        with open(self.data_file) as f:
+            return [Feature(line) for line in f if not line.startswith("#")]
+
+    def head(self):
+        with open(self.data_file) as f:
+            return "".join(line for line in f if line.startswith("##"))
 
     def filter_features(self, function):
         """Returns a list of features where function(feature) reutrns a truthy
@@ -62,21 +66,6 @@ class GenomeAnnotation(object):
                 yield collection
                 collection = [feature]
         yield collection
-
-
-def read_gff(gff_file):
-    """Creates a GenomeAnnotation object from a GFF file"""
-    headlines = []
-    features = []
-    with open(gff_file) as f:
-        for line in f:
-            if line.startswith("##"):
-                headlines.append(line)
-            elif line.startswith("#"):
-                pass
-            else:
-                features.append(Feature(line))
-    return GenomeAnnotation(head="".join(headlines), features=features)
 
 
 def in_features(reads, features):

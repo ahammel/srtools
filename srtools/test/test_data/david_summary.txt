@@ -1,5 +1,5 @@
 
-[96mSummary of Sam File [0m[96m/home/alex/repos/py-srtools/srtools/test/test_data/speed_test.sam[0m
+[96mSummary of Sam File [0m[96m/home/alex/repos/Srtools/srtools/test/test_data/speed_test.sam[0m
 
 [92mTotal Reads Mapped to Chromosomes[0m...
 1             991  100.0%
